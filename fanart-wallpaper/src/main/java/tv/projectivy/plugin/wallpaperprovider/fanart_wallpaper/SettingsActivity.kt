@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.sample
+package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity

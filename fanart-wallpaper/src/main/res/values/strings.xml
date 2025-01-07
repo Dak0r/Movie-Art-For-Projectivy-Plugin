@@ -1,7 +1,7 @@
 <resources>
-    <string name="plugin_name">Projectivy Wallpaper Provider Sample</string>
+    <string name="plugin_name">Projectivy Fan Art Wallpaper Provider</string>
     <string name="plugin_description">Plugin description</string>
-    <string name="plugin_uuid">CHANGE_ME</string>
+    <string name="plugin_uuid">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
 
     <!-- Setting parameters -->
     <string name="settings">Settings</string>

@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.sample
+package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
 import android.content.Context
 import android.content.SharedPreferences

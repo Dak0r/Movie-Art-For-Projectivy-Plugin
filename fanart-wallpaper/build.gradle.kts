@@ -3,14 +3,15 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("plugin.serialization") version "1.9.0" // Use the latest version of Kotlin
 }
 
 android {
-    namespace = "tv.projectivy.plugin.wallpaperprovider.sample"
+    namespace = "tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "tv.projectivy.plugin.wallpaperprovider.sample"
+        applicationId = "tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
@@ -46,4 +47,7 @@ dependencies {
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("com.google.code.gson:gson:2.11.0")
     implementation(project(":api"))
+    implementation("com.squareup.okhttp3:okhttp:4.11.0") // For HTTP requests
+    implementation("com.google.code.gson:gson:2.11.0") // JSON Parsing
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // Use the latest version
 }

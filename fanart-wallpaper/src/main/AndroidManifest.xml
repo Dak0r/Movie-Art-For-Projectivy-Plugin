@@ -19,6 +19,15 @@
         android:icon="@mipmap/ic_launcher"
         android:banner="@mipmap/ic_banner"
         android:theme="@style/Theme.ProjectivyWallpaperProvider">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
         <activity
             android:name=".SettingsActivity"
             android:exported="true">
@@ -71,10 +80,10 @@
                 android:name="itemsCacheDurationMillis"
                 android:value="@integer/items_cache_duration_millis"/>
 
-            <!-- This sample plugin will receive time_elapsed and launcher_idle_mode_changed events -->
+            <!-- This sample plugin will receive CARD_FOCUSED and PROGRAM_CARD_FOCUSED -->
             <meta-data
                 android:name="updateMode"
-                android:value="17"/>
+                android:value="12"/>
         </service>
 
     </application>

@@ -1,8 +1,7 @@
-package tv.projectivy.plugin.wallpaperprovider.sample
+package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidanceStylist.Guidance
