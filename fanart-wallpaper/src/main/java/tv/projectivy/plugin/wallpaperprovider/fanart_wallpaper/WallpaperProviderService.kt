@@ -94,9 +94,7 @@ class WallpaperProviderService: Service() {
                                 }
 
                                 if(downloadUrl == null) {
-                                    val tmdbApiKey =
-                                        "" // Replace with your TMDb API Key
-                                    val tmdbApi = TMDbApi(tmdbApiKey)
+                                    val tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY)
                                     val backgroundImageUrl =
                                         tmdbApi.fetchBackgroundImage(cleanName)
                                     if (backgroundImageUrl != null) {

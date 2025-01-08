@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -10,12 +11,29 @@ android {
     namespace = "tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.01"
+
+        // Load the API key from the apikeys.properties file
+        val apiKeysFile = file("apikeys.properties")
+        if (apiKeysFile.exists()) {
+            val properties = Properties()
+            apiKeysFile.inputStream().use { properties.load(it) }
+
+            // Add the API key as a BuildConfig field
+            val tmdbApiKey = properties["TMDB_API_KEY"] as String
+            buildConfigField("String", "TMDB_API_KEY", "\"$tmdbApiKey\"")
+        } else {
+            println("Warning: apikeys.properties file not found!")
+        }
 
     }
 
