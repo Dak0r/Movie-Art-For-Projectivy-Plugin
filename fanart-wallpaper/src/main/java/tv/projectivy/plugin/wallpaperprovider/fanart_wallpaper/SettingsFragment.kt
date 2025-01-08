@@ -1,14 +1,19 @@
 package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
 
+import ApiCacheManager
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
-import kotlin.CharSequence
+import java.io.File
 
-class SettingsFragment : GuidedStepSupportFragment() {
+class SettingsFragment: GuidedStepSupportFragment() {
+
     override fun onCreateGuidance(savedInstanceState: Bundle?): Guidance {
         return Guidance(
             getString(R.string.plugin_name),
@@ -19,31 +24,49 @@ class SettingsFragment : GuidedStepSupportFragment() {
     }
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        PreferencesManager.init(requireContext())
-
-        val currentImageUrl = PreferencesManager.imageUrl
         val action = GuidedAction.Builder(context)
-            .id(ACTION_ID_IMAGE_URL)
-            .title(R.string.setting_image_url_title)
-            .description(currentImageUrl)
-            .editDescription(currentImageUrl)
-            .descriptionEditable(true)
+            .id(ACTION_ID_CLEAR_CACHE)
+            .title(R.string.setting_clear_cache_title)
+            .description(R.string.setting_clear_cache_description)
+            .descriptionEditable(false)
             .build()
         actions.add(action)
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ACTION_ID_IMAGE_URL -> {
-                val params: CharSequence? = action.editDescription
-                findActionById(ACTION_ID_IMAGE_URL)?.description = params
-                notifyActionChanged(findActionPositionById(ACTION_ID_IMAGE_URL))
-                PreferencesManager.imageUrl = params.toString()
+            ACTION_ID_CLEAR_CACHE -> {
+                clearExternalCache(requireContext())
+                Toast.makeText(
+                    context,
+                    "Cache cleared!",
+                    Toast.LENGTH_LONG
+                ).show()
+                println("Cache cleared!")
             }
         }
     }
 
     companion object {
-        private const val ACTION_ID_IMAGE_URL = 1L
+        private const val ACTION_ID_CLEAR_CACHE = 1L
+    }
+
+    fun clearExternalCache(context: Context) {
+        val externalCacheDir: File? = context.externalCacheDir
+        if (externalCacheDir != null && externalCacheDir.isDirectory) {
+            deleteDirectoryContents(externalCacheDir)
+        }
+    }
+
+    private fun deleteDirectoryContents(dir: File): Boolean {
+        val files = dir.listFiles() ?: return false
+
+        for (file in files) {
+            if (file.isDirectory) {
+                deleteDirectoryContents(file)
+            }
+            file.delete()
+        }
+        return dir.delete()
     }
 }

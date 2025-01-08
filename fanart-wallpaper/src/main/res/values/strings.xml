@@ -1,10 +1,14 @@
-<resources>
-    <string name="plugin_name">Projectivy Fan Art Wallpaper Provider</string>
-    <string name="plugin_description">Plugin description</string>
-    <string name="plugin_uuid">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="plugin_name">Projectivy Fan Art Wallpaper</string>
+    <string name="plugin_description">
+        Downloads fan art wallpaper for movies and tv shows from themoviedb.org.
+        Shows animated dynamic color for non channel cards.
+    </string>
+    <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
 
     <!-- Setting parameters -->
     <string name="settings">Settings</string>
-    <string name="setting_image_url_title">Image URL</string>
+    <string name="setting_clear_cache_title">Clear Cache</string>
+    <string name="setting_clear_cache_description">Click here to clear all cached backgrounds.</string>
 
 </resources>
