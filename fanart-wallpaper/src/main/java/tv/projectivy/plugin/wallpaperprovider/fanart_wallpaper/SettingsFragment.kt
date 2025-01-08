@@ -1,9 +1,7 @@
 package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
 
-import ApiCacheManager
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources

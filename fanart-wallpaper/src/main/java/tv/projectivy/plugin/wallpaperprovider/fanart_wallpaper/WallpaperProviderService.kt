@@ -98,11 +98,11 @@ class WallpaperProviderService: Service() {
                                     val backgroundImageUrl =
                                         tmdbApi.fetchBackgroundImage(cleanName)
                                     if (backgroundImageUrl != null) {
-                                        println("Background image URL: $backgroundImageUrl")
+                                        println("TMDB Background image URL: $backgroundImageUrl")
                                         apiCache?.put(cleanName, backgroundImageUrl)
                                         downloadUrl = backgroundImageUrl
                                     } else {
-                                        println("No background image found for the title: $it")
+                                        println("TMDB: No background image found for the title: $it")
                                         apiCache?.put(cleanName, "None")
                                     }
                                 }
