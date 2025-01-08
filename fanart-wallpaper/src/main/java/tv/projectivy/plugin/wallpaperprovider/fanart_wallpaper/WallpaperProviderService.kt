@@ -1,5 +1,6 @@
 package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
+import ApiCacheManager
 import android.app.Service
 import android.content.ContentResolver
 import android.content.Context
@@ -17,6 +18,7 @@ import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
 class WallpaperProviderService: Service() {
 
     val that = this
+    var apiCache: ApiCacheManager? = null
 
     fun fileUriExists(context: Context, fileUri: Uri): Boolean {
         return try {
@@ -30,6 +32,8 @@ class WallpaperProviderService: Service() {
     override fun onCreate() {
         super.onCreate()
         PreferencesManager.init(this)
+        apiCache = ApiCacheManager(this,
+            Uri.fromFile(getCacheFile(this,"tmdb_api_cache.json")));
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -80,19 +84,39 @@ class WallpaperProviderService: Service() {
                             "backdrop_${cleanName}.jpg"
                         )
                         if (!fileUriExists(that, Uri.fromFile(file))) {
-                            val tmdbApiKey =
-                                "" // Replace with your TMDb API Key
-                            val tmdbApi = TMDbApi(tmdbApiKey)
-
                             try {
-                                val backgroundImageUrl =
-                                    tmdbApi.fetchBackgroundImage(cleanName)
-                                if (backgroundImageUrl != null) {
-                                    println("Background image URL: $backgroundImageUrl")
-                                    downloadImageToUri(that, backgroundImageUrl, Uri.fromFile(file))
-                                    println("Download done: ${file.path}")
-                                } else {
-                                    println("No background image found for the title: $it")
+                                var downloadUrl: String? = null
+                                apiCache?.let {
+                                    if (it.containsKey(cleanName)) {
+                                        downloadUrl = it.get(cleanName)
+                                        println("Found Cached Api Response for $it -> $downloadUrl")
+                                    }
+                                }
+
+                                if(downloadUrl == null) {
+                                    val tmdbApiKey =
+                                        "" // Replace with your TMDb API Key
+                                    val tmdbApi = TMDbApi(tmdbApiKey)
+                                    val backgroundImageUrl =
+                                        tmdbApi.fetchBackgroundImage(cleanName)
+                                    if (backgroundImageUrl != null) {
+                                        println("Background image URL: $backgroundImageUrl")
+                                        apiCache?.put(cleanName, backgroundImageUrl)
+                                        downloadUrl = backgroundImageUrl
+                                    } else {
+                                        println("No background image found for the title: $it")
+                                        apiCache?.put(cleanName, "None")
+                                    }
+                                }
+                                downloadUrl?.let {
+                                    if (it != "None") {
+                                        downloadImageToUri(
+                                            that,
+                                            it,
+                                            Uri.fromFile(file)
+                                        )
+                                        println("Download done: ${file.path}")
+                                    }
                                 }
                             } catch (e: Exception) {
                                 e.printStackTrace()

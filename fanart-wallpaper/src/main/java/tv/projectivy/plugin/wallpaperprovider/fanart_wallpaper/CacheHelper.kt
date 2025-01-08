@@ -17,6 +17,7 @@ fun getCacheFile(context: Context, fileName: String): File {
 
     return cacheFile
 }
+
 fun exposeFileToOtherApps(context: Context, cacheFile: File): Uri {
 
     val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", cacheFile)
