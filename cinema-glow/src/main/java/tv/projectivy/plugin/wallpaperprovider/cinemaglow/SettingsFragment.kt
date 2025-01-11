@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
+package tv.projectivy.plugin.wallpaperprovider.cinemaglow
 
 
 import android.content.Context

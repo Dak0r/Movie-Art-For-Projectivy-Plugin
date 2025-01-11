@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper"
+    namespace = "tv.projectivy.plugin.wallpaperprovider.cinemaglow"
     compileSdk = 35
 
     buildFeatures {
@@ -16,7 +16,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper"
+        applicationId = "tv.projectivy.plugin.wallpaperprovider.cinemaglow"
         minSdk = 23
         targetSdk = 35
         versionCode = 1

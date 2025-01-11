@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Projectivy Wallpaper Provider"
-include(":fanart-wallpaper")
+rootProject.name = "Cinema Glow - Projectivy Plugin"
+include(":cinema-glow")
 include(":api")

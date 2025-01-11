@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
+package tv.projectivy.plugin.wallpaperprovider.cinemaglow
 
 import android.app.Service
 import android.content.ContentResolver
@@ -12,12 +12,12 @@ import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
-import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.ApiResponseCache
-import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.LottieEditorRegex
-import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.TMDbApi
-import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.downloadFile
-import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.exposeFileToOtherApps
-import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.getCacheFile
+import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.ApiResponseCache
+import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.LottieEditorRegex
+import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.TMDbApi
+import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.downloadFile
+import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.exposeFileToOtherApps
+import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.getCacheFile
 
 class WallpaperProviderService: Service() {
 
