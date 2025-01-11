@@ -37,7 +37,7 @@ class WallpaperProviderService: Service() {
         super.onCreate()
         PreferencesManager.init(this)
         apiCache = ApiResponseCache(this,
-            Uri.fromFile(getCacheFile(this,"tmdb_api_cache.json")));
+            Uri.fromFile(getCacheFile(this,"tmdb_api_cache.json")))
     }
 
     override fun onBind(intent: Intent): IBinder {

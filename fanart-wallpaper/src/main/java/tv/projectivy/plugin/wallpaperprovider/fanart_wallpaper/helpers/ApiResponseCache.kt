@@ -17,35 +17,29 @@ class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
         loadCacheFromFile()
     }
 
-    // Stores an entry in the cache and persists the changes
     fun put(key: String, value: String) {
         cache[key] = value
         saveCacheToFile()
     }
 
-    // Retrieves an entry from the cache
     fun get(key: String): String? {
         return cache[key]
     }
 
-    // Removes an entry from the cache and persists the changes
     fun remove(key: String) {
         cache.remove(key)
         saveCacheToFile()
     }
 
-    // Clears all entries from the cache and persists the changes
     fun clear() {
         cache.clear()
         saveCacheToFile()
     }
 
-    // Checks if a key exists in the cache
     fun containsKey(key: String): Boolean {
         return cache.containsKey(key)
     }
 
-    // Loads the cache from the file
     private fun loadCacheFromFile() {
         try {
             val contentResolver = context.contentResolver
@@ -53,14 +47,13 @@ class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
             inputStream?.use {
                 val json = it.bufferedReader().readText()
                 val entries = Json.decodeFromString<List<CacheEntry>>(json)
-                cache.putAll(entries.associate { it.key to it.value })
+                cache.putAll(entries.associate { entry -> entry.key to entry.value })
             } ?: println("Cache file not found, initializing empty cache.")
         } catch (e: Exception) {
             println("Error loading cache: ${e.message}")
         }
     }
 
-    // Saves the cache to the file
     private fun saveCacheToFile() {
         try {
             val contentResolver = context.contentResolver
