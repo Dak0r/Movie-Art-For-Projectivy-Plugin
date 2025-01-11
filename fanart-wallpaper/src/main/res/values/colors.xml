@@ -4,5 +4,9 @@
     <color name="app_background">#ff000000</color>
     <color name="color_accent">#ffaa3f</color>
     <color name="projectivy_color">#f08029</color>
-    <color name="projectivy_plugin_color">#904049</color>
+    <color name="projectivy_color_text">#ffffff</color>
+    <color name="projectivy_plugin_projector_color">#01b4e4</color>
+    <color name="projectivy_plugin_color">#01b4e4</color>
+    <color name="projectivy_plugin_color_background">#0d253f</color>
+    <color name="projectivy_plugin_color_title">#7AD593</color>
 </resources>

@@ -1,8 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="plugin_name">Projectivy Fan Art Wallpaper</string>
+    <string name="plugin_name">Cinema Glow - Projectivy Plugin</string>
     <string name="plugin_description">
         Downloads backgrounds for movies and tv shows from themoviedb.org.
-        Shows an animated dynamic color for non channel cards.
+        Shows an animated dynamic color background for non channel cards.
         by danielkorgel.com
     </string>
     <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
