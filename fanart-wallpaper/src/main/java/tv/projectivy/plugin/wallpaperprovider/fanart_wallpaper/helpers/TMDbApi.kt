@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
+package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers
 
 import android.os.Build
 import androidx.annotation.RequiresApi

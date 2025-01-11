@@ -1,3 +1,5 @@
+package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers
+
 import android.content.Context
 import android.net.Uri
 import kotlinx.serialization.*
@@ -7,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Serializable
 data class CacheEntry(val key: String, val value: String)
 
-class ApiCacheManager(private val context: Context, private val fileUri: Uri) {
+class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
 
     private val cache: MutableMap<String, String> = ConcurrentHashMap()
 

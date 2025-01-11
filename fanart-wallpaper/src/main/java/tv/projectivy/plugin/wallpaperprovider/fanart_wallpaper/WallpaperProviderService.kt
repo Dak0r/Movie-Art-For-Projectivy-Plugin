@@ -1,6 +1,5 @@
 package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
 
-import ApiCacheManager
 import android.app.Service
 import android.content.ContentResolver
 import android.content.Context
@@ -9,16 +8,21 @@ import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
-import downloadImageToUri
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
+import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.ApiResponseCache
+import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.LottieEditorRegex
+import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.TMDbApi
+import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.downloadFile
+import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.exposeFileToOtherApps
+import tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers.getCacheFile
 
 class WallpaperProviderService: Service() {
 
     val that = this
-    var apiCache: ApiCacheManager? = null
+    var apiCache: ApiResponseCache? = null
 
     fun fileUriExists(context: Context, fileUri: Uri): Boolean {
         return try {
@@ -32,7 +36,7 @@ class WallpaperProviderService: Service() {
     override fun onCreate() {
         super.onCreate()
         PreferencesManager.init(this)
-        apiCache = ApiCacheManager(this,
+        apiCache = ApiResponseCache(this,
             Uri.fromFile(getCacheFile(this,"tmdb_api_cache.json")));
     }
 
@@ -77,8 +81,8 @@ class WallpaperProviderService: Service() {
 
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
-                    event.title?.let{
-                        val cleanName = cleanString(it)
+                    event.title?.let { title ->
+                        val cleanName = cleanString(title)
                         val file = getCacheFile(
                             that,
                             "backdrop_${cleanName}.jpg"
@@ -86,10 +90,10 @@ class WallpaperProviderService: Service() {
                         if (!fileUriExists(that, Uri.fromFile(file))) {
                             try {
                                 var downloadUrl: String? = null
-                                apiCache?.let {
-                                    if (it.containsKey(cleanName)) {
-                                        downloadUrl = it.get(cleanName)
-                                        println("Found Cached Api Response for $it -> $downloadUrl")
+                                apiCache?.let { cache ->
+                                    if (cache.containsKey(cleanName)) {
+                                        downloadUrl = cache.get(cleanName)
+                                        println("Found Cached Api Response for $title -> $downloadUrl")
                                     }
                                 }
 
@@ -102,15 +106,15 @@ class WallpaperProviderService: Service() {
                                         apiCache?.put(cleanName, backgroundImageUrl)
                                         downloadUrl = backgroundImageUrl
                                     } else {
-                                        println("TMDB: No background image found for the title: $it")
+                                        println("TMDB: No background image found for the title: $title")
                                         apiCache?.put(cleanName, "None")
                                     }
                                 }
-                                downloadUrl?.let {
-                                    if (it != "None") {
-                                        downloadImageToUri(
+                                downloadUrl?.let { url ->
+                                    if (url != "None") {
+                                        downloadFile(
                                             that,
-                                            it,
+                                            url,
                                             Uri.fromFile(file)
                                         )
                                         println("Download done: ${file.path}")

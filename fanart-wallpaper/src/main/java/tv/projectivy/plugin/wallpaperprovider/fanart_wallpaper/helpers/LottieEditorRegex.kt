@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper
+package tv.projectivy.plugin.wallpaperprovider.fanart_wallpaper.helpers
 
 import android.content.Context
 import android.net.Uri
@@ -49,7 +49,6 @@ class LottieEditorRegex(private val context: Context, private val fileUri: Uri) 
 
         return this
     }
-
 
     // Save the updated Lottie JSON file
     fun save(outputUri: Uri): LottieEditorRegex {
