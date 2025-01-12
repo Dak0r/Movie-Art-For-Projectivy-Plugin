@@ -22,6 +22,8 @@ android {
         versionCode = 1
         versionName = "1.01"
 
+        vectorDrawables.useSupportLibrary = true
+
         // Load the API key from the apikeys.properties file
         val apiKeysFile = file("apikeys.properties")
         if (apiKeysFile.exists()) {
