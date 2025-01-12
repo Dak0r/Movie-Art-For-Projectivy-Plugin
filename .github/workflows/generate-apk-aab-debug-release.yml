@@ -33,6 +33,13 @@ jobs:
       - name: Set repository name as env variable
         run: echo "repository_name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
 
+      - name: Write Secret to File
+        env:
+          API_KEY: ${{ secrets.APIKEYS_PROPERTIES }} # Replace with your secret's name
+        run: |
+          echo "TMDB_API_KEY=$API_KEY" > ./cinema-glow/apikeys.properties
+          echo "Secret written to file successfully."
+
       - name: Set Up JDK
         uses: actions/setup-java@v4
         with:
@@ -52,8 +59,8 @@ jobs:
         run: ./gradlew build
 
       # Create APK Debug
-      - name: Build apk debug project (APK) - ${{ env.main_project_module }} module
-        run: ./gradlew assembleDebug
+      #- name: Build apk debug project (APK) - ${{ env.main_project_module }} module
+      #  run: ./gradlew assembleDebug
 
       # Create APK Release
       #- name: Build apk release project (APK) - ${{ env.main_project_module }} module
