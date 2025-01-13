@@ -80,7 +80,7 @@
                 android:name="itemsCacheDurationMillis"
                 android:value="@integer/items_cache_duration_millis"/>
 
-            <!-- This sample plugin will receive CARD_FOCUSED and PROGRAM_CARD_FOCUSED -->
+            <!-- This plugin will receive CARD_FOCUSED and PROGRAM_CARD_FOCUSED -->
             <meta-data
                 android:name="updateMode"
                 android:value="12"/>

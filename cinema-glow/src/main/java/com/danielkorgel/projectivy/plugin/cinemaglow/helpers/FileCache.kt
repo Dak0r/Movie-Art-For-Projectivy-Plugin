@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers
+package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
 import android.content.Context
 import android.content.Intent

@@ -1,4 +1,4 @@
-package tv.projectivy.plugin.wallpaperprovider.cinemaglow
+package com.danielkorgel.projectivy.plugin.cinemaglow
 
 import android.app.Service
 import android.content.ContentResolver
@@ -8,16 +8,16 @@ import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.getCacheFile
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
-import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.ApiResponseCache
-import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.LottieEditorRegex
-import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.TMDbApi
-import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.downloadFile
-import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.exposeFileToOtherApps
-import tv.projectivy.plugin.wallpaperprovider.cinemaglow.helpers.getCacheFile
 
 class WallpaperProviderService: Service() {
 
