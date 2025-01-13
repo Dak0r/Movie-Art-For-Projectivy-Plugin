@@ -1,15 +1,20 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="plugin_name">Cinema Glow - Projectivy Plugin</string>
     <string name="plugin_description">
-        Downloads backgrounds for movies and tv shows from themoviedb.org.
-        Shows an animated dynamic color background for non channel cards.
-        by danielkorgel.com
+        Plugin for Projectivy Launcher which downloads custom backgrounds for movies and tv shows
+        from TheMovieDB.org. Shows an animated dynamic color background for non channel cards.
+
+        Enable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Cinema Glow
     </string>
     <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
 
     <!-- Setting parameters -->
     <string name="settings">Settings</string>
     <string name="setting_clear_cache_title">Clear Cache</string>
-    <string name="setting_clear_cache_description">Click here to clear all cached backgrounds.</string>
+    <string name="setting_clear_cache_description">Deletes all cached backgrounds and data.</string>
+    <string name="setting_projectivy_title">Get Projectivy</string>
+    <string name="setting_projectivy_description">This plugin requires the Projectivy Launcher.</string>
+    <string name="setting_danielkorgel_title"> </string>
+    <string name="setting_danielkorgel_description">By Daniel Korgel </string>
 
 </resources>
