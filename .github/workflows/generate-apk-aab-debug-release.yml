@@ -51,6 +51,15 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Increment Version Code and Name
+        uses: Devofure/advance-android-version-actions@v1.6.1
+        with:
+          gradlePath: cinema-glow/build.gradle.kts
+          versionName: 1.0.${{ github.run_number }}
+          versionCode: ${{ github.run_number }}
+          versionStage: '' # Optional: Set to 'alpha', 'beta', etc., or leave empty for release
+          versionCodeLimiter: '' # Optional: Limit the length of versionCode if needed
+
       - name: Change wrapper permissions
         run: chmod +x ./gradlew
 
