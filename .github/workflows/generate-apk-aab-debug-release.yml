@@ -7,6 +7,10 @@ env:
   # The name of the Play Store
   playstore_name: Cinema Glow - Projectivy Plugin
 
+  JKS_PASSWORD: ${{ secrets.JKS_PASSWORD }}
+  JKS_KEY_ALIAS: ${{ secrets.JKS_KEY_ALIAS }}
+  JKS_KEY_PASSWORD: ${{ secrets.JKS_KEY_PASSWORD }}
+
 on:
 
   push:
@@ -85,10 +89,7 @@ jobs:
         with:
           name: ${{ env.date_today }} - ${{ env.playstore_name }} - ${{ env.repository_name }} - APK(s) release generated
           path: ${{ env.main_project_module }}/build/outputs/apk/release/
-        env:
-          JKS_PASSWORD: ${{ secrets.JKS_PASSWORD }}
-          JKS_KEY_ALIAS: ${{ secrets.JKS_KEY_ALIAS }}
-          JKS_KEY_PASSWORD: ${{ secrets.JKS_KEY_PASSWORD }}
+
 
       # Noted For Output [main_project_module]/build/outputs/bundle/release/
       - name: Upload AAB (App Bundle) Release - ${{ env.repository_name }}
@@ -96,7 +97,3 @@ jobs:
         with:
           name: ${{ env.date_today }} - ${{ env.playstore_name }} - ${{ env.repository_name }} - App bundle(s) AAB release generated
           path: ${{ env.main_project_module }}/build/outputs/bundle/release/
-        env:
-          JKS_PASSWORD: ${{ secrets.JKS_PASSWORD }}
-          JKS_KEY_ALIAS: ${{ secrets.JKS_KEY_ALIAS }}
-          JKS_KEY_PASSWORD: ${{ secrets.JKS_KEY_PASSWORD }}
