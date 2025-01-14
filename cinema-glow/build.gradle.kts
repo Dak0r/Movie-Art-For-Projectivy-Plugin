@@ -39,10 +39,20 @@ android {
 
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../cinemaglow.jks")
+            storePassword = System.getenv("JKS_PASSWORD")
+            keyAlias = System.getenv("JKS_KEY_ALIAS")
+            keyPassword = System.getenv("JKS_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
