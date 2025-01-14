@@ -106,3 +106,12 @@ jobs:
         with:
           name: ${{ env.date_today }} - ${{ env.playstore_name }} - ${{ env.repository_name }} - App bundle(s) AAB release generated
           path: ${{ env.main_project_module }}/build/outputs/bundle/release/
+
+      - name: Upload to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.danielkorgel.projectivy.plugin.cinemaglow
+          releaseFiles: cinema-glow/build/outputs/bundle/release/cinema-glow-release.aab
+          track: production
+          status: draft
