@@ -39,10 +39,14 @@ jobs:
 
       - name: Write Secret to File
         env:
-          API_KEY: ${{ secrets.APIKEYS_PROPERTIES }} # Replace with your secret's name
+          API_KEY: ${{ secrets.APIKEYS_PROPERTIES }}
         run: |
           echo "TMDB_API_KEY=$API_KEY" > ./cinema-glow/apikeys.properties
-          echo "Secret written to file successfully."
+          echo "Secret written to file successfully"
+
+      - name: Write Secret to File
+        run: |
+          cat ./cinema-glow/apikeys.properties
 
       - name: Set Up JDK
         uses: actions/setup-java@v4
