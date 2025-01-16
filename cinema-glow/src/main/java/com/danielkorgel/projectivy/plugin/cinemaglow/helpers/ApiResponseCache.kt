@@ -2,12 +2,16 @@ package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
 import android.content.Context
 import android.net.Uri
+import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 
 @Serializable
-data class CacheEntry(val key: String, val value: String)
+data class CacheEntry(
+    @SerializedName("key") val key: String,
+    @SerializedName("value") val value: String
+)
 
 class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
 

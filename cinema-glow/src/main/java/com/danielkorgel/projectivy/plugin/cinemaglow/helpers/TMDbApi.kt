@@ -41,15 +41,15 @@ class TMDbApi(private val apiKey: String) {
 
     // Data classes for parsing TMDb API response
     data class SearchResult(
-        val results: List<Result>
+        @SerializedName("results") val results: List<Result>
     )
 
     data class Result(
         @SerializedName("backdrop_path") val backdropPath: String?,
-        val title: String?,
+        @SerializedName("title") val title: String?,
         @SerializedName("name") val name: String?,
         @SerializedName("media_type") val mediaType: String?, // e.g., "movie" or "tv"
-        val popularity: Double?,
+        @SerializedName("popularity") val popularity: Double?,
         @SerializedName("release_date") val releaseDate: String? // Format: YYYY-MM-DD
     )
 }
