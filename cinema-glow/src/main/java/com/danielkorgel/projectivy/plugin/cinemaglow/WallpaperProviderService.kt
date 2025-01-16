@@ -106,7 +106,7 @@ class WallpaperProviderService: Service() {
                                         apiCache?.put(cleanName, backgroundImageUrl)
                                         downloadUrl = backgroundImageUrl
                                     } else {
-                                        println("TMDB: No background image found for the title: $title")
+                                        println("TMDB: No background image found for the title: $title ($cleanName)")
                                         apiCache?.put(cleanName, "None")
                                     }
                                 }
@@ -172,7 +172,7 @@ class WallpaperProviderService: Service() {
             // Remove content within square brackets (including the brackets)
             val noBrackets = input.replace("\\[.*?]".toRegex(), " ")
             // Replace all special characters with spaces
-            val noSpecialChars = noBrackets.replace("[^a-zA-Z0-9]".toRegex(), " ")
+            val noSpecialChars = java.net.URLEncoder.encode(noBrackets, "utf-8")
             // Replace multiple sequential spaces with a single space
             return noSpecialChars.replace("\\s+".toRegex(), " ").trim()
         }
