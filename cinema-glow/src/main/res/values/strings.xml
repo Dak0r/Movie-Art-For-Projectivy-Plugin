@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="plugin_name">Movie Art Plugin for Projectivy</string>
     <string name="plugin_description">
-        Enable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Cinema Glow.
+        Setup: Enable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Cinema Glow.
         Movie and TV Show background art fetched from TheMovieDB.org.
     </string>
     <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
