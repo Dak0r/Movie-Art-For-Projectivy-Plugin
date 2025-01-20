@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="plugin_name">Movie Art Plugin for Projectivy</string>
+    <string name="plugin_name">Movie Art for Projectivy</string>
     <string name="plugin_description">
         Setup: Enable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Cinema Glow.
         Movie and TV Show background art fetched from TheMovieDB.org.
@@ -11,7 +11,7 @@
     <string name="setting_clear_cache_title">Clear Cache</string>
     <string name="setting_clear_cache_description">Deletes all cached backgrounds and data.</string>
     <string name="setting_projectivy_title">Get Projectivy</string>
-    <string name="setting_projectivy_description">This plugin requires the Projectivy Launcher.</string>
+    <string name="setting_projectivy_description">This plugin requires Projectivy Launcher (Pro).</string>
     <string name="setting_danielkorgel_title"> </string>
     <string name="setting_danielkorgel_description">By Daniel Korgel </string>
 
