@@ -1,6 +1,6 @@
 # Movie Art for Projectivy Plugin
 
-A wallpaper plugin for the Projectivy GoogleTV launcher which fetches 
+A wallpaper plugin for the [Projectivy](https://play.google.com/store/apps/details?id=com.spocky.projengmenu) AndroidTV launcher which fetches 
 movie and tv show backgrounds from [TheMovieDB.org](https://www.themoviedb.org/).
 
 Plugin is based on the [Projectivy plugin template](https://github.com/spocky/projectivy-plugin-wallpaper-provider).
