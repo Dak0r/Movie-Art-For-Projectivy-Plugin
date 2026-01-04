@@ -2,10 +2,13 @@ name: Generated APK AAB (Upload - Create Artifact To Github Action)
 
 env:
   # The name of the main module repository
-  main_project_module: cinema-glow
+  main_project_module: movie-art-plugin
 
   # The name of the Play Store
-  playstore_name: Cinema Glow - Projectivy Plugin
+  playstore_name: Movie Art for Projectivy
+
+  # Bundle Identifier for the app
+  package_bundle_id: com.danielkorgel.projectivy.plugin.cinemaglow
 
   JKS_PASSWORD: ${{ secrets.JKS_PASSWORD }}
   JKS_KEY_ALIAS: ${{ secrets.JKS_KEY_ALIAS }}
@@ -40,8 +43,9 @@ jobs:
       - name: Write Secret to File
         env:
           API_KEY: ${{ secrets.TMDB_KEY }}
+          MAIN_MODULE: ${{ env.main_project_module }}
         run: |
-          echo "TMDB_API_KEY=$API_KEY" > ./cinema-glow/apikeys.properties
+          echo "TMDB_API_KEY=$API_KEY" > ./$MAIN_MODULE/apikeys.properties
           echo "Secret written to file successfully"
 
       - name: Set Up JDK
@@ -54,7 +58,7 @@ jobs:
       - name: Increment Version Code and Name
         uses: Devofure/advance-android-version-actions@v1.6.1
         with:
-          gradlePath: cinema-glow/build.gradle.kts
+          gradlePath: ${{ env.main_project_module }}/build.gradle.kts
           versionName: 1.0.${{ github.run_number }}
           versionCode: ${{ github.run_number }}
           versionStage: '' # Optional: Set to 'alpha', 'beta', etc., or leave empty for release
@@ -111,7 +115,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
-          packageName: com.danielkorgel.projectivy.plugin.cinemaglow
-          releaseFiles: cinema-glow/build/outputs/bundle/release/cinema-glow-release.aab
+          packageName: ${{ env.package_bundle_id }}
+          releaseFiles: ${{ env.main_project_module }}/build/outputs/bundle/release/${{ env.main_project_module }}-release.aab
           track: production
           status: draft
