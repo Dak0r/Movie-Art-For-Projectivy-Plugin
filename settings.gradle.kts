@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Cinema Glow - Projectivy Plugin"
-include(":cinema-glow")
+rootProject.name = "Movie Art for Projectivy Plugin"
+include(":movie-art-plugin")
 include(":api")
