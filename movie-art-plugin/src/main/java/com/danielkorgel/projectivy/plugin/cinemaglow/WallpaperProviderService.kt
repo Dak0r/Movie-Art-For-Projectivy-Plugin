@@ -28,7 +28,7 @@ class WallpaperProviderService: Service() {
         return try {
             context.contentResolver.openInputStream(fileUri)?.close() // Try opening the URI
             true // If no exception, file exists
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false // If an exception occurs, file does not exist
         }
     }

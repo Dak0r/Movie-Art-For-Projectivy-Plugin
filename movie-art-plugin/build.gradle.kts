@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.danielkorgel.projectivy.plugin.cinemaglow"
-    compileSdk = 35
+    compileSdk = 36
 
     buildFeatures {
         buildConfig = true
@@ -18,9 +18,9 @@ android {
     defaultConfig {
         applicationId = "com.danielkorgel.projectivy.plugin.cinemaglow"
         minSdk = 23
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.01"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.02"
 
         vectorDrawables.useSupportLibrary = true
 
@@ -71,14 +71,14 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.leanback:leanback:1.2.0-alpha04")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.leanback:leanback:1.2.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.google.code.gson:gson:2.13.2")
     implementation(project(":api"))
-    implementation("com.squareup.okhttp3:okhttp:4.11.0") // For HTTP requests
-    implementation("com.google.code.gson:gson:2.11.0") // JSON Parsing
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // Use the latest version
+    implementation("com.squareup.okhttp3:okhttp:5.3.2") // For HTTP requests
+    implementation("com.google.code.gson:gson:2.13.2") // JSON Parsing
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 }
