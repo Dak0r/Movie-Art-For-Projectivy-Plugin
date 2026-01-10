@@ -9,11 +9,13 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImagePickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.getCacheFile
+import java.io.File
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
@@ -50,8 +52,25 @@ class WallpaperProviderService: Service() {
         override fun getWallpapers(event: Event?): List<Wallpaper> {
 
             return when (event) {
-                // When the focused card changes
+                // When the focused card changes (app icons)
                 is Event.CardFocused -> {
+                    // Check if custom background is enabled and exists
+                    if (PreferencesManager.useCustomAppBackground) {
+                        val customBgFile = ImagePickerHelper.getCustomBackgroundFile(that)
+                        if (customBgFile.exists()) {
+                            try {
+                                val shareableUri = exposeFileToOtherApps(that, customBgFile)
+                                return listOf(
+                                    Wallpaper(shareableUri.toString(), WallpaperType.IMAGE)
+                                )
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                // Fall through to color extraction
+                            }
+                        }
+                    }
+
+                    // Fallback to color extraction (original behavior)
                     try {
                         val file = getCacheFile(
                             that,

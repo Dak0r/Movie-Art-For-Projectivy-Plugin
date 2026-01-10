@@ -1,6 +1,7 @@
 package com.danielkorgel.projectivy.plugin.cinemaglow
 
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,7 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 import java.io.File
 import androidx.core.net.toUri
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImagePickerHelper
 
 class SettingsFragment : GuidedStepSupportFragment() {
 
@@ -25,6 +27,26 @@ class SettingsFragment : GuidedStepSupportFragment() {
     }
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
+        // Custom App Background Toggle
+        val isCustomBgEnabled = PreferencesManager.useCustomAppBackground
+        val actionCustomBgToggle = GuidedAction.Builder(context)
+            .id(ACTION_ID_CUSTOM_BG_TOGGLE)
+            .title(R.string.setting_custom_bg_title)
+            .description(if (isCustomBgEnabled) R.string.setting_custom_bg_enabled else R.string.setting_custom_bg_disabled)
+            .descriptionEditable(false)
+            .build()
+        actions.add(actionCustomBgToggle)
+
+        // Pick from Gallery
+        val actionPickGallery = GuidedAction.Builder(context)
+            .id(ACTION_ID_PICK_GALLERY)
+            .title(R.string.setting_custom_bg_pick_gallery_title)
+            .description(R.string.setting_custom_bg_pick_gallery_description)
+            .descriptionEditable(false)
+            .build()
+        actions.add(actionPickGallery)
+
+        // Clear Cache
         val actionClearCache = GuidedAction.Builder(context)
             .id(ACTION_ID_CLEAR_CACHE)
             .title(R.string.setting_clear_cache_title)
@@ -33,6 +55,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
             .build()
         actions.add(actionClearCache)
 
+        // Get Projectivy
         val actionGetProjectIvy = GuidedAction.Builder(context)
             .id(ACTION_ID_GET_PROJECTIVY)
             .title(R.string.setting_projectivy_title)
@@ -41,6 +64,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
             .build()
         actions.add(actionGetProjectIvy)
 
+        // About
         val actionAuthor = GuidedAction.Builder(context)
             .id(ACTION_ID_ABOUT)
             .title(R.string.setting_about_title)
@@ -52,6 +76,22 @@ class SettingsFragment : GuidedStepSupportFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
+            ACTION_ID_CUSTOM_BG_TOGGLE -> {
+                val newState = !PreferencesManager.useCustomAppBackground
+                PreferencesManager.useCustomAppBackground = newState
+                // Update the action description
+                action.description = getString(
+                    if (newState) R.string.setting_custom_bg_enabled 
+                    else R.string.setting_custom_bg_disabled
+                )
+                notifyActionChanged(findActionPositionById(ACTION_ID_CUSTOM_BG_TOGGLE))
+                println("Custom background toggled: $newState")
+            }
+
+            ACTION_ID_PICK_GALLERY -> {
+                openGalleryPicker()
+            }
+
             ACTION_ID_CLEAR_CACHE -> {
                 clearExternalCache(requireContext())
                 Toast.makeText(
@@ -81,10 +121,58 @@ class SettingsFragment : GuidedStepSupportFragment() {
         }
     }
 
+    private fun openGalleryPicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/*"
+        }
+        try {
+            startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "No gallery app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateToggleAction() {
+        val position = findActionPositionById(ACTION_ID_CUSTOM_BG_TOGGLE)
+        if (position >= 0) {
+            val action = actions[position]
+            action.description = getString(
+                if (PreferencesManager.useCustomAppBackground) R.string.setting_custom_bg_enabled
+                else R.string.setting_custom_bg_disabled
+            )
+            notifyActionChanged(position)
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                val context = requireContext()
+                val file = ImagePickerHelper.copyImageFromUri(context, uri)
+                if (file != null && file.exists()) {
+                    PreferencesManager.customAppBackgroundPath = file.absolutePath
+                    PreferencesManager.useCustomAppBackground = true
+                    updateToggleAction()
+                    Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_SHORT).show()
+                    println("Custom background set from gallery: ${file.absolutePath}")
+                } else {
+                    Toast.makeText(context, "Failed to copy image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     companion object {
         private const val ACTION_ID_CLEAR_CACHE = 1L
         private const val ACTION_ID_GET_PROJECTIVY = 2L
         private const val ACTION_ID_ABOUT = 3L
+        private const val ACTION_ID_CUSTOM_BG_TOGGLE = 4L
+        private const val ACTION_ID_PICK_GALLERY = 5L
+
+        private const val REQUEST_CODE_PICK_IMAGE = 100
     }
 
     fun clearExternalCache(context: Context) {
