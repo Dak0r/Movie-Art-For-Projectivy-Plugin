@@ -11,9 +11,25 @@ import com.google.gson.reflect.TypeToken
 object PreferencesManager {
     lateinit var preferences: SharedPreferences
 
+    // Preference keys for custom app background
+    const val KEY_USE_CUSTOM_APP_BACKGROUND = "use_custom_app_background"
+    const val KEY_CUSTOM_APP_BACKGROUND_PATH = "custom_app_background_path"
+
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
     }
+
+    // Custom app background helpers
+    var useCustomAppBackground: Boolean
+        get() = get(KEY_USE_CUSTOM_APP_BACKGROUND, false)
+        set(value) = set(KEY_USE_CUSTOM_APP_BACKGROUND, value)
+
+    var customAppBackgroundPath: String?
+        get() {
+            val path: String = get(KEY_CUSTOM_APP_BACKGROUND_PATH, "")
+            return if (path.isEmpty()) null else path
+        }
+        set(value) = set(KEY_CUSTOM_APP_BACKGROUND_PATH, value ?: "")
 
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()

@@ -14,4 +14,12 @@
     <string name="setting_about_title">This plugin is Open Source</string>
     <string name="setting_about_description">Browse on GitHub.</string>
 
+    <!-- Custom App Background Settings -->
+    <string name="setting_custom_bg_title">Background for Apps</string>
+    <string name="setting_custom_bg_enabled">Custom Background</string>
+    <string name="setting_custom_bg_disabled">Dynamic Colors</string>
+    <string name="setting_custom_bg_pick_gallery_title">Set custom Background for Apps</string>
+    <string name="setting_custom_bg_pick_gallery_description">Select an image from your device.\nRequires a Gallery or File Explorer app.</string>
+    <string name="custom_bg_set_success">Custom background set successfully!</string>
+
 </resources>
