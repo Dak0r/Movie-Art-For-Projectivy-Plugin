@@ -128,7 +128,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
         }
         try {
             startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
-        } catch (e: ActivityNotFoundException) {
+        } catch (_: ActivityNotFoundException) {
             Toast.makeText(context, "No gallery app found", Toast.LENGTH_SHORT).show()
         }
     }
