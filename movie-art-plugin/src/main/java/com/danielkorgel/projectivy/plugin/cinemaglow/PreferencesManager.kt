@@ -12,7 +12,7 @@ object PreferencesManager {
     lateinit var preferences: SharedPreferences
 
     // Preference keys for custom app background
-    const val KEY_USE_CUSTOM_APP_BACKGROUND = "use_custom_app_background"
+    const val APP_BACKGROUND = "app_background"
     const val KEY_CUSTOM_APP_BACKGROUND_NAME = "custom_app_background_path"
 
     fun init(context: Context) {
@@ -21,8 +21,8 @@ object PreferencesManager {
 
     // Custom app background helpers
     var useCustomAppBackground: Boolean
-        get() = get(KEY_USE_CUSTOM_APP_BACKGROUND, false)
-        set(value) = set(KEY_USE_CUSTOM_APP_BACKGROUND, value)
+        get() = get(APP_BACKGROUND, "DynamicColors") == "CustomBackground"
+        set(value) = set(APP_BACKGROUND, if (value) "CustomBackground" else "DynamicColors")
 
     var customAppBackgroundName: String?
         get() {
