@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="plugin_name">Movie Art for Projectivy</string>
     <string name="plugin_description">
-        Setup: Enable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Movie Art for Projectivy.\n\nMovie and TV Show background art is fetched from TheMovieDB.org.
+        Setup:\nEnable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Movie Art for Projectivy.\n\nMovie and TV Show background art is fetched from TheMovieDB.org.
     </string>
     <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
 
