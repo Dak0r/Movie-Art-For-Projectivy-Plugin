@@ -55,8 +55,9 @@ class WallpaperProviderService: Service() {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
                     // Check if custom background is enabled and exists
-                    if (PreferencesManager.useCustomAppBackground) {
-                        val customBgFile = ImagePickerHelper.getCustomBackgroundFile(that)
+                    if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
+                        val customBgFile = ImagePickerHelper.getCustomBackgroundFile(that,
+                            PreferencesManager.customAppBackgroundName!!)
                         if (customBgFile.exists()) {
                             try {
                                 val shareableUri = exposeFileToOtherApps(that, customBgFile)

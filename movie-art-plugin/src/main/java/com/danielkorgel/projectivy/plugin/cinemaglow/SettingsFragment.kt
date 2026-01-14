@@ -153,7 +153,17 @@ class SettingsFragment : GuidedStepSupportFragment() {
                 val context = requireContext()
                 val file = ImagePickerHelper.copyImageFromUri(context, uri)
                 if (file != null && file.exists()) {
-                    PreferencesManager.customAppBackgroundPath = file.absolutePath
+                    // Delete old file if it exists
+                    if(PreferencesManager.customAppBackgroundName != null) {
+                        val oldFile = ImagePickerHelper.getCustomBackgroundFile(
+                            context,
+                            PreferencesManager.customAppBackgroundName!!
+                        )
+                        if (oldFile.exists()) {
+                            oldFile.delete()
+                        }
+                    }
+                    PreferencesManager.customAppBackgroundName = file.name
                     PreferencesManager.useCustomAppBackground = true
                     updateToggleAction()
                     Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_SHORT).show()
