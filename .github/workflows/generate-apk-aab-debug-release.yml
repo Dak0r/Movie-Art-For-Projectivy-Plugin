@@ -125,3 +125,4 @@ jobs:
           releaseFiles: ${{ env.main_project_module }}/build/outputs/bundle/release/${{ env.main_project_module }}-release.aab
           track: production
           status: draft
+          changesNotSentForReview: true
