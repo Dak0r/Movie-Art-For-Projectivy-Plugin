@@ -2,6 +2,7 @@ package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
 import android.content.Context
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import java.io.File
 import java.io.FileOutputStream
 
@@ -16,13 +17,22 @@ object ImagePickerHelper {
     }
 
     /**
-     * Copy an image from a content URI (gallery pick) to internal storage
+     * Copy an image or video from a content URI to internal storage
      */
     fun copyImageFromUri(context: Context, sourceUri: Uri): File? {
         return try {
-            val fileName = "custom_bg_${System.currentTimeMillis()}.jpg"
+            val contentResolver = context.contentResolver
+            val mimeType = contentResolver.getType(sourceUri)
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+            
+            val fileName = if (extension != null) {
+                "custom_bg_${System.currentTimeMillis()}.$extension"
+            } else {
+                sourceUri.lastPathSegment ?: "custom_bg_${System.currentTimeMillis()}"
+            }
+            
             val targetFile = getCustomBackgroundFile(context, fileName)
-            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+            contentResolver.openInputStream(sourceUri)?.use { inputStream ->
                 FileOutputStream(targetFile).use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }

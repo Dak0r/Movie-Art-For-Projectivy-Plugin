@@ -5,8 +5,10 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImagePickerHelper
@@ -20,7 +22,7 @@ import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
 
-class WallpaperProviderService: Service() {
+class WallpaperProviderService : Service() {
 
     val that = this
     var apiCache: ApiResponseCache? = null
@@ -37,8 +39,10 @@ class WallpaperProviderService: Service() {
     override fun onCreate() {
         super.onCreate()
         PreferencesManager.init(this)
-        apiCache = ApiResponseCache(this,
-            Uri.fromFile(getCacheFile(this,"tmdb_api_cache.json")))
+        apiCache = ApiResponseCache(
+            this,
+            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
+        )
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -50,52 +54,18 @@ class WallpaperProviderService: Service() {
         @RequiresApi(Build.VERSION_CODES.O)
         override fun getWallpapers(event: Event?): List<Wallpaper> {
 
+            val currentPid = getCallingPid()
+            val lastPid = PreferencesManager.lastCallingPid
+            if (lastPid != currentPid) {
+                // Reset lastWallpaper if the calling process has changed
+                PreferencesManager.lastWallpaper = ""
+                PreferencesManager.lastCallingPid = currentPid
+            }
+
             return when (event) {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
-                    // Check if custom background is enabled and exists
-                    if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
-                        val customBgFile = ImagePickerHelper.getCustomBackgroundFile(that,
-                            PreferencesManager.customAppBackgroundName!!)
-                        if (customBgFile.exists()) {
-                            try {
-                                val shareableUri = exposeFileToOtherApps(that, customBgFile)
-                                return listOf(
-                                    Wallpaper(shareableUri.toString(), WallpaperType.IMAGE)
-                                )
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                // Fall through to color extraction
-                            }
-                        }
-                    }
-
-                    // Fallback to color extraction (original behavior)
-                    try {
-                        val file = getCacheFile(
-                            that,
-                            "gradient_${event.lightColor}_${event.darkColor}.json"
-                        )
-                        if (!fileUriExists(that, Uri.fromFile(file))) {
-                            val lottieEditor = LottieEditorRegex(that, getDrawableUri(R.raw.two_color_gradient))
-                            lottieEditor
-                                .load()
-                                .replaceGradientColors(
-                                    positions = listOf(0f, 1f), // Positions
-                                    colors = listOf(event.lightColor, event.darkColor) // Colors
-                                )
-                                .save(Uri.fromFile(file))
-                        }
-                        val shareableUri = exposeFileToOtherApps(that, file)
-                        return listOf(
-                            Wallpaper(shareableUri.toString(), WallpaperType.LOTTIE),
-                        )
-                    }catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    return listOf(
-                        Wallpaper(getDrawableUri(R.raw.gradient).toString(), WallpaperType.LOTTIE)
-                    )
+                    return fallbackWallpaper(event)
                 }
 
                 // When the focused "program" card changes
@@ -116,7 +86,7 @@ class WallpaperProviderService: Service() {
                                     }
                                 }
 
-                                if(downloadUrl == null) {
+                                if (downloadUrl == null) {
                                     val tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY)
                                     val backgroundImageUrl =
                                         tmdbApi.fetchBackgroundImage(cleanName)
@@ -145,10 +115,11 @@ class WallpaperProviderService: Service() {
                         }
 
                         if (fileUriExists(that, Uri.fromFile(file))) {
-                            val shareableUri = exposeFileToOtherApps(that, file)
+                            val shareableUri = exposeFileToOtherApps(that, file).toString()
+                            PreferencesManager.lastWallpaper = shareableUri
                             return listOf(
                                 Wallpaper(
-                                    shareableUri.toString(),
+                                    shareableUri,
                                     WallpaperType.IMAGE,
                                     author = "themoviedb.org"
                                 )
@@ -156,14 +127,13 @@ class WallpaperProviderService: Service() {
                         }
                     }
                     event.iconUri?.let { iconUri ->
+                        PreferencesManager.lastWallpaper = iconUri
                         return listOf(
                             Wallpaper(iconUri, WallpaperType.IMAGE)
                         )
                     }
 
-                    return listOf(
-                        Wallpaper(getDrawableUri(R.raw.gradient).toString(), WallpaperType.LOTTIE)
-                    )
+                    return fallbackWallpaper(event)
                 }
 
                 else -> emptyList()  // Returning an empty list won't change the currently displayed wallpaper
@@ -196,6 +166,79 @@ class WallpaperProviderService: Service() {
             return noSpecialChars.replace("\\s+".toRegex(), " ").trim()
         }
 
+        private fun isVideoFile(fileName: String): Boolean {
+            val extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
+            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            return mimeType?.startsWith("video/") == true
+        }
+
+        private fun fallbackWallpaper(
+            event: Event
+        ): List<Wallpaper> {
+            val lastWallpaper = PreferencesManager.lastWallpaper
+
+            // Check if custom background is enabled and exists
+            if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
+                val fileName = PreferencesManager.customAppBackgroundName!!
+                val customBgFile = ImagePickerHelper.getCustomBackgroundFile(that, fileName)
+                if (customBgFile.exists()) {
+                    try {
+                        val shareableUri = exposeFileToOtherApps(that, customBgFile).toString()
+                        PreferencesManager.lastWallpaper = shareableUri
+                        val type =
+                            if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
+
+                        if (type == WallpaperType.VIDEO && lastWallpaper == shareableUri) {
+                            // To prevent videos from restarting on every card change we return empty list,
+                            // if we return a custom video multiples in a row
+                            println("Returning emptyList to prevent video from getting restarted")
+                            return emptyList()
+                        }
+                        return listOf(
+                            Wallpaper(shareableUri, type)
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Fall through to color extraction
+                    }
+                }
+            }
+
+            // Fallback to color extraction (original behavior)
+            if (event is Event.CardFocused) {
+                try {
+                    val file = getCacheFile(
+                        that,
+                        "gradient_${event.lightColor}_${event.darkColor}.json"
+                    )
+                    if (!fileUriExists(that, Uri.fromFile(file))) {
+                        val lottieEditor =
+                            LottieEditorRegex(that, getDrawableUri(R.raw.two_color_gradient))
+                        lottieEditor
+                            .load()
+                            .replaceGradientColors(
+                                positions = listOf(0f, 1f), // Positions
+                                colors = listOf(event.lightColor, event.darkColor) // Colors
+                            )
+                            .save(Uri.fromFile(file))
+                    }
+                    val shareableUri = exposeFileToOtherApps(that, file).toString()
+                    PreferencesManager.lastWallpaper = shareableUri
+                    return listOf(
+                        Wallpaper(shareableUri, WallpaperType.LOTTIE),
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // Final fallback: return default gradient
+            val defaultUri = getDrawableUri(R.raw.gradient).toString()
+            PreferencesManager.lastWallpaper = defaultUri
+            return listOf(
+                Wallpaper(defaultUri, WallpaperType.LOTTIE)
+            )
+        }
 
     }
 }
