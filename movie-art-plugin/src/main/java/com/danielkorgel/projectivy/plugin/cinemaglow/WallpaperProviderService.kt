@@ -175,7 +175,6 @@ class WallpaperProviderService : Service() {
         private fun fallbackWallpaper(
             event: Event
         ): List<Wallpaper> {
-            val lastWallpaper = PreferencesManager.lastWallpaper
 
             // Check if custom background is enabled and exists
             if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
@@ -184,16 +183,17 @@ class WallpaperProviderService : Service() {
                 if (customBgFile.exists()) {
                     try {
                         val shareableUri = exposeFileToOtherApps(that, customBgFile).toString()
-                        PreferencesManager.lastWallpaper = shareableUri
                         val type =
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
-                        if (type == WallpaperType.VIDEO && lastWallpaper == shareableUri) {
+                        if (type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
                             // To prevent videos from restarting on every card change we return empty list,
                             // if we return a custom video multiples in a row
                             println("Returning emptyList to prevent video from getting restarted")
                             return emptyList()
                         }
+
+                        PreferencesManager.lastWallpaper = shareableUri
                         return listOf(
                             Wallpaper(shareableUri, type)
                         )
