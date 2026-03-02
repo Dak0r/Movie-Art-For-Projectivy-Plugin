@@ -64,7 +64,7 @@ class WallpaperProviderService : Service() {
                 // After a full device reboot, the first call to set a video wallpaper sometimes fails
                 // So we always send videos for the first few calls after Projectivy was started
                 // (even if it was just the app that was restarted no the whole device. Because we can't know.
-                PreferencesManager.videoForceDUpdateCount = 2
+                PreferencesManager.videoForcedUpdateCount = 2
 
                 PreferencesManager.lastCallingPid = currentPid
             }
@@ -195,9 +195,9 @@ class WallpaperProviderService : Service() {
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
                         if (type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
-                            if (PreferencesManager.videoForceDUpdateCount > 0) {
-                                PreferencesManager.videoForceDUpdateCount--
-                                println("Force update count: ${PreferencesManager.videoForceDUpdateCount}")
+                            if (PreferencesManager.videoForcedUpdateCount > 0) {
+                                PreferencesManager.videoForcedUpdateCount--
+                                println("Force update count: ${PreferencesManager.videoForcedUpdateCount}")
                             } else {
                                 // To prevent videos from restarting on every card change we return empty list,
                                 // if we return a custom video multiples in a row

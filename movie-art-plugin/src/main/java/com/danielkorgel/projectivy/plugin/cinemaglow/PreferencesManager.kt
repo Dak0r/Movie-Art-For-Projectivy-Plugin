@@ -42,7 +42,7 @@ object PreferencesManager {
         get() = get(KEY_LAST_CALLING_PID, -1)
         set(value) = set(KEY_LAST_CALLING_PID, value)
 
-    var videoForceDUpdateCount: Int
+    var videoForcedUpdateCount: Int
         get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
         set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
 
