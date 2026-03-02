@@ -6,7 +6,7 @@ import android.webkit.MimeTypeMap
 import java.io.File
 import java.io.FileOutputStream
 
-object ImagePickerHelper {
+object BackgroundPickerHelper {
 
     /**
      * Get the file where custom background is stored
@@ -19,7 +19,7 @@ object ImagePickerHelper {
     /**
      * Copy an image or video from a content URI to internal storage
      */
-    fun copyImageFromUri(context: Context, sourceUri: Uri): File? {
+    fun copyBackgroundFromUri(context: Context, sourceUri: Uri): File? {
         return try {
             val contentResolver = context.contentResolver
             val mimeType = contentResolver.getType(sourceUri)

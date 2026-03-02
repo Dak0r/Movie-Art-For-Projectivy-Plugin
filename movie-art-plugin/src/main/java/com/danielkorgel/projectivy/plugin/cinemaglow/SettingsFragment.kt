@@ -7,14 +7,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 import java.io.File
 import androidx.core.net.toUri
-import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImagePickerHelper
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 
 class SettingsFragment : GuidedStepSupportFragment() {
 
@@ -154,11 +153,11 @@ class SettingsFragment : GuidedStepSupportFragment() {
         if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
             data?.data?.let { uri ->
                 val context = requireContext()
-                val file = ImagePickerHelper.copyImageFromUri(context, uri)
+                val file = BackgroundPickerHelper.copyBackgroundFromUri(context, uri)
                 if (file != null && file.exists()) {
                     // Delete old file if it exists to avoid cluttering cache
                     PreferencesManager.customAppBackgroundName?.let { oldName ->
-                        val oldFile = ImagePickerHelper.getCustomBackgroundFile(context, oldName)
+                        val oldFile = BackgroundPickerHelper.getCustomBackgroundFile(context, oldName)
                         if (oldFile.exists() && oldFile.name != file.name) {
                             oldFile.delete()
                         }

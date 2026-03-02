@@ -11,7 +11,7 @@ import android.os.IBinder
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
-import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImagePickerHelper
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
@@ -179,7 +179,7 @@ class WallpaperProviderService : Service() {
             // Check if custom background is enabled and exists
             if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
                 val fileName = PreferencesManager.customAppBackgroundName!!
-                val customBgFile = ImagePickerHelper.getCustomBackgroundFile(that, fileName)
+                val customBgFile = BackgroundPickerHelper.getCustomBackgroundFile(that, fileName)
                 if (customBgFile.exists()) {
                     try {
                         val shareableUri = exposeFileToOtherApps(that, customBgFile).toString()
