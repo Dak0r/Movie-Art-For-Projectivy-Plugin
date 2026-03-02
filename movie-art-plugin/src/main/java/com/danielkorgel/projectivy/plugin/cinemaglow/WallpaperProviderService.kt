@@ -54,11 +54,18 @@ class WallpaperProviderService : Service() {
         @RequiresApi(Build.VERSION_CODES.O)
         override fun getWallpapers(event: Event?): List<Wallpaper> {
 
-            val currentPid = getCallingPid()
+            // Check if Projectivy was restarted since the last call:
+            val currentPid = Binder.getCallingPid()
             val lastPid = PreferencesManager.lastCallingPid
             if (lastPid != currentPid) {
-                // Reset lastWallpaper if the calling process has changed
+                // If the app was restarted, we can't be sure that it remembers the the last wallpaper
+                // we sent. So we always send it in that case.
                 PreferencesManager.lastWallpaper = ""
+                // After a full device reboot, the first call to set a video wallpaper sometimes fails
+                // So we always send videos for the first few calls after Projectivy was started
+                // (even if it was just the app that was restarted no the whole device. Because we can't know.
+                PreferencesManager.videoForceDUpdateCount = 2
+
                 PreferencesManager.lastCallingPid = currentPid
             }
 
@@ -135,8 +142,9 @@ class WallpaperProviderService : Service() {
 
                     return fallbackWallpaper(event)
                 }
-
-                else -> emptyList()  // Returning an empty list won't change the currently displayed wallpaper
+                // It's unexpected that we receive any other kind of event, but in case we do we ignore it.
+                // Returning an empty list won't change the currently displayed wallpaper.
+                else -> emptyList()
             }
         }
 
@@ -187,10 +195,15 @@ class WallpaperProviderService : Service() {
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
                         if (type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
-                            // To prevent videos from restarting on every card change we return empty list,
-                            // if we return a custom video multiples in a row
-                            println("Returning emptyList to prevent video from getting restarted")
-                            return emptyList()
+                            if (PreferencesManager.videoForceDUpdateCount > 0) {
+                                PreferencesManager.videoForceDUpdateCount--
+                                println("Force update count: ${PreferencesManager.videoForceDUpdateCount}")
+                            } else {
+                                // To prevent videos from restarting on every card change we return empty list,
+                                // if we return a custom video multiples in a row
+                                println("Returning emptyList to prevent video from getting restarted")
+                                return emptyList()
+                            }
                         }
 
                         PreferencesManager.lastWallpaper = shareableUri

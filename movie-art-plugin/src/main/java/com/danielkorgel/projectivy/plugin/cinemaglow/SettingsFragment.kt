@@ -166,7 +166,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
                     PreferencesManager.customAppBackgroundName = file.name
                     PreferencesManager.useCustomAppBackground = true
                     updateToggleAction()
-                    Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_LONG).show()
                     println("Custom background set from gallery: ${file.absolutePath}")
                 } else {
                     Toast.makeText(context, "Failed to copy file", Toast.LENGTH_SHORT).show()

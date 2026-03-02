@@ -16,6 +16,7 @@ object PreferencesManager {
     const val KEY_CUSTOM_APP_BACKGROUND_NAME = "custom_app_background_path"
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
+    const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -40,6 +41,10 @@ object PreferencesManager {
     var lastCallingPid: Int
         get() = get(KEY_LAST_CALLING_PID, -1)
         set(value) = set(KEY_LAST_CALLING_PID, value)
+
+    var videoForceDUpdateCount: Int
+        get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
+        set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
 
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
