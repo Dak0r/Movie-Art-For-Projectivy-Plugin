@@ -39,11 +39,15 @@ class WallpaperProviderService : Service() {
     override fun onCreate() {
         super.onCreate()
         PreferencesManager.init(this)
-        apiCache = ApiResponseCache(
-            this,
-            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
-        )
-        println("Plugin created")
+        if(apiCache == null) {
+            apiCache = ApiResponseCache(
+                this,
+                Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
+            )
+            println("Plugin created")
+        }else {
+            println("Plugin resumed")
+        }
         // Clear last sent wallpaper, to resend it when the service is recreated, e.g.
         // if the device went to sleep. Unfortunately the service is stopped and started if an app
         // is opened, which causes video wallpaper to restart after closing an app
