@@ -17,6 +17,7 @@ object PreferencesManager {
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
     const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
+    const val KEY_LAST_WALLPAPER_SENT_TIMESTAMP = "last_wallpaper_sent_timestamp"
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -45,6 +46,10 @@ object PreferencesManager {
     var videoForcedUpdateCount: Int
         get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
         set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
+
+    var lastWallpaperSentTimestamp: Long
+        get() = get(KEY_LAST_WALLPAPER_SENT_TIMESTAMP, 0L)
+        set(value) = set(KEY_LAST_WALLPAPER_SENT_TIMESTAMP, value)
 
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
@@ -95,7 +100,7 @@ object PreferencesManager {
                     is Double -> editor.putFloat(key, value.toFloat())
                     is Float -> editor.putFloat(key, value)
                     is Int -> editor.putInt(key, value)
-                    is Long -> editor.putInt(key, value.toInt())
+                    is Long -> editor.putLong(key, value)
                     is String -> editor.putString(key, value)
                     is ArrayList<*> -> editor.putStringSet(key, java.util.HashSet(value as java.util.ArrayList<String>))
                     is Set<*> -> editor.putStringSet(key, value as Set<String>)

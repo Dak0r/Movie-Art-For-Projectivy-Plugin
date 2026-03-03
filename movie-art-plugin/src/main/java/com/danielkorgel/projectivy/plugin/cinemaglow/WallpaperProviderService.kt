@@ -123,7 +123,7 @@ class WallpaperProviderService : Service() {
 
                         if (fileUriExists(that, Uri.fromFile(file))) {
                             val shareableUri = exposeFileToOtherApps(that, file).toString()
-                            PreferencesManager.lastWallpaper = shareableUri
+                            updateLastWallpaperSent(shareableUri)
                             return listOf(
                                 Wallpaper(
                                     shareableUri,
@@ -134,7 +134,7 @@ class WallpaperProviderService : Service() {
                         }
                     }
                     event.iconUri?.let { iconUri ->
-                        PreferencesManager.lastWallpaper = iconUri
+                        updateLastWallpaperSent(iconUri)
                         return listOf(
                             Wallpaper(iconUri, WallpaperType.IMAGE)
                         )
@@ -146,6 +146,11 @@ class WallpaperProviderService : Service() {
                 // Returning an empty list won't change the currently displayed wallpaper.
                 else -> emptyList()
             }
+        }
+
+        private fun updateLastWallpaperSent(uri: String) {
+            PreferencesManager.lastWallpaper = uri
+            PreferencesManager.lastWallpaperSentTimestamp = System.currentTimeMillis()
         }
 
         override fun getPreferences(): String {
@@ -194,7 +199,9 @@ class WallpaperProviderService : Service() {
                         val type =
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
-                        if (type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
+                        val isExpired = System.currentTimeMillis() - PreferencesManager.lastWallpaperSentTimestamp > 3600000 // 1 hour
+
+                        if (!isExpired && type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
                             if (PreferencesManager.videoForcedUpdateCount > 0) {
                                 PreferencesManager.videoForcedUpdateCount--
                                 println("Force update count: ${PreferencesManager.videoForcedUpdateCount}")
@@ -206,7 +213,7 @@ class WallpaperProviderService : Service() {
                             }
                         }
 
-                        PreferencesManager.lastWallpaper = shareableUri
+                        updateLastWallpaperSent(shareableUri)
                         return listOf(
                             Wallpaper(shareableUri, type)
                         )
@@ -236,7 +243,7 @@ class WallpaperProviderService : Service() {
                             .save(Uri.fromFile(file))
                     }
                     val shareableUri = exposeFileToOtherApps(that, file).toString()
-                    PreferencesManager.lastWallpaper = shareableUri
+                    updateLastWallpaperSent(shareableUri)
                     return listOf(
                         Wallpaper(shareableUri, WallpaperType.LOTTIE),
                     )
@@ -247,7 +254,7 @@ class WallpaperProviderService : Service() {
 
             // Final fallback: return default gradient
             val defaultUri = getDrawableUri(R.raw.gradient).toString()
-            PreferencesManager.lastWallpaper = defaultUri
+            updateLastWallpaperSent(defaultUri)
             return listOf(
                 Wallpaper(defaultUri, WallpaperType.LOTTIE)
             )
