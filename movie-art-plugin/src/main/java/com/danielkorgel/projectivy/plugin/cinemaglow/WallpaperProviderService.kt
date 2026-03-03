@@ -5,9 +5,9 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
@@ -39,29 +39,29 @@ class WallpaperProviderService : Service() {
     override fun onCreate() {
         super.onCreate()
         PreferencesManager.init(this)
-        if(apiCache == null) {
-            apiCache = ApiResponseCache(
-                this,
-                Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
-            )
-            println("Plugin created")
-        }else {
-            println("Plugin resumed")
-        }
-        // Clear last sent wallpaper, to resend it when the service is recreated, e.g.
-        // if the device went to sleep. Unfortunately the service is stopped and started if an app
-        // is opened, which causes video wallpaper to restart after closing an app
-        PreferencesManager.lastWallpaper = ""
+        apiCache = ApiResponseCache(
+            this,
+            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
+        )
+        println("Service created")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        println("Plugin stopped")
+        
+        // When the service is destroyed, check if the screen is off.
+        // If it is off, we should reset the wallpaper
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        if (!pm.isInteractive) {
+            println("Service destroyed while screen is OFF. Reset Last Wallpaper.")
+            PreferencesManager.lastWallpaper = ""
+        } else {
+            println("Service destroyed while screen is ON (likely app switch).")
+        }
     }
 
     override fun onBind(intent: Intent): IBinder {
         // Return the interface.
-        println("Plugin bound")
         return binder
     }
 
@@ -70,7 +70,7 @@ class WallpaperProviderService : Service() {
         override fun getWallpapers(event: Event?): List<Wallpaper> {
 
             // Check if Projectivy was restarted since the last call:
-            val currentPid = Binder.getCallingPid()
+            val currentPid = getCallingPid()
             val lastPid = PreferencesManager.lastCallingPid
             if (lastPid != currentPid) {
                 // If the app was restarted, we can't be sure that it remembers the the last wallpaper
@@ -213,7 +213,7 @@ class WallpaperProviderService : Service() {
                         val type =
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
-                        // Optimization: Only skip resending if it's a VIDEO that hasn't changed.
+                        // Don't Resend wallpaper if it's a VIDEO that hasn't changed.
                         if (type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
                             if (PreferencesManager.videoForcedUpdateCount > 0) {
                                 PreferencesManager.videoForcedUpdateCount--

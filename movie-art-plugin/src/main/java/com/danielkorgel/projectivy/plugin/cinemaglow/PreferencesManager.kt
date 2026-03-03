@@ -17,13 +17,11 @@ object PreferencesManager {
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
     const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
-    const val KEY_LAST_WALLPAPER_SENT_TIMESTAMP = "last_wallpaper_sent_timestamp"
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
     }
 
-    // Custom app background helpers
     var useCustomAppBackground: Boolean
         get() = get(APP_BACKGROUND, "DynamicColors") == "CustomBackground"
         set(value) = set(APP_BACKGROUND, if (value) "CustomBackground" else "DynamicColors")
@@ -72,7 +70,7 @@ object PreferencesManager {
             Int::class -> preferences.getInt(key, defaultValue as? Int ?: -1) as T
             Boolean::class -> preferences.getBoolean(key, defaultValue as? Boolean ?: false) as T
             Float::class -> preferences.getFloat(key, defaultValue as? Float ?: -1f) as T
-            Long::class -> preferences.getLong(key, defaultValue as? Long ?: -1) as T
+            Long::class -> preferences.getLong(key, defaultValue as? Long ?: -1L) as T
             else -> throw UnsupportedOperationException("Not yet implemented")
         }
 
