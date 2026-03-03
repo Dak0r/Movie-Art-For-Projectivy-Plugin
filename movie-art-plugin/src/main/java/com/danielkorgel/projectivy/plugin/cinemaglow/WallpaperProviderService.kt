@@ -182,7 +182,6 @@ class WallpaperProviderService : Service() {
 
         private fun updateLastWallpaperSent(uri: String) {
             PreferencesManager.lastWallpaper = uri
-            PreferencesManager.lastWallpaperSentTimestamp = System.currentTimeMillis()
         }
 
         override fun getPreferences(): String {
@@ -231,10 +230,8 @@ class WallpaperProviderService : Service() {
                         val type =
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
-                        val isExpired = System.currentTimeMillis() - PreferencesManager.lastWallpaperSentTimestamp > 3600000 // 1 hour
-
-                        // Optimization: Only skip resending if it's a VIDEO that hasn't changed or expired.
-                        if (type == WallpaperType.VIDEO && !isExpired && PreferencesManager.lastWallpaper == shareableUri) {
+                        // Optimization: Only skip resending if it's a VIDEO that hasn't changed.
+                        if (type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
                             if (PreferencesManager.videoForcedUpdateCount > 0) {
                                 PreferencesManager.videoForcedUpdateCount--
                                 println("Force update count: ${PreferencesManager.videoForcedUpdateCount}")

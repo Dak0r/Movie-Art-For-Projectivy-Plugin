@@ -47,10 +47,6 @@ object PreferencesManager {
         get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
         set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
 
-    var lastWallpaperSentTimestamp: Long
-        get() = get(KEY_LAST_WALLPAPER_SENT_TIMESTAMP, 0L)
-        set(value) = set(KEY_LAST_WALLPAPER_SENT_TIMESTAMP, value)
-
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
         operation(editor)
