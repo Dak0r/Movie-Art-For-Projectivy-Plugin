@@ -78,7 +78,7 @@ class WallpaperProviderService : Service() {
                 PreferencesManager.lastWallpaper = ""
                 // After a full device reboot, the first call to set a video wallpaper sometimes fails
                 // So we always send videos for the first few calls after Projectivy was started
-                // (even if it was just the app that was restarted no the whole device. Because we can't know.
+                // (even if it was just the app that was restarted no the whole device. Because we don't know.)
                 PreferencesManager.videoForcedUpdateCount = 2
 
                 PreferencesManager.lastCallingPid = currentPid
