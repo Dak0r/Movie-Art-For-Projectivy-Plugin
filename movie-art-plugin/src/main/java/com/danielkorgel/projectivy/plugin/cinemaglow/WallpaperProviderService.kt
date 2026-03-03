@@ -1,9 +1,11 @@
 package com.danielkorgel.projectivy.plugin.cinemaglow
 
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
@@ -27,6 +29,19 @@ class WallpaperProviderService : Service() {
     val that = this
     var apiCache: ApiResponseCache? = null
 
+    /**
+     * Receiver to detect when the device wakes up from standby.
+     * We reset the wallpaper state to ensure videos start playing again if Projectivy "forgot" them.
+     */
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_ON) {
+                println("Device woke up, forcing wallpaper resend")
+                PreferencesManager.lastWallpaper = ""
+            }
+        }
+    }
+
     fun fileUriExists(context: Context, fileUri: Uri): Boolean {
         return try {
             context.contentResolver.openInputStream(fileUri)?.close() // Try opening the URI
@@ -43,6 +58,23 @@ class WallpaperProviderService : Service() {
             this,
             Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
         )
+
+        // Register for screen on events (TV waking up)
+        val filter = IntentFilter(Intent.ACTION_SCREEN_ON)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screenStateReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenStateReceiver, filter)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(screenStateReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -201,7 +233,8 @@ class WallpaperProviderService : Service() {
 
                         val isExpired = System.currentTimeMillis() - PreferencesManager.lastWallpaperSentTimestamp > 3600000 // 1 hour
 
-                        if (!isExpired && type == WallpaperType.VIDEO && PreferencesManager.lastWallpaper == shareableUri) {
+                        // Optimization: Only skip resending if it's a VIDEO that hasn't changed or expired.
+                        if (type == WallpaperType.VIDEO && !isExpired && PreferencesManager.lastWallpaper == shareableUri) {
                             if (PreferencesManager.videoForcedUpdateCount > 0) {
                                 PreferencesManager.videoForcedUpdateCount--
                                 println("Force update count: ${PreferencesManager.videoForcedUpdateCount}")
