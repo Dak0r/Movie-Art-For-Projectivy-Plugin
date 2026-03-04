@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="plugin_name">Movie Art for Projectivy</string>
     <string name="plugin_description">
-        Setup:\nEnable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Movie Art for Projectivy.\n\nMovie and TV Show background art is fetched from TheMovieDB.org.
+        Setup:\nEnable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Movie Art for Projectivy.\nMovie and TV Show background art is fetched from TheMovieDB.org.
     </string>
     <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
 
@@ -19,7 +19,7 @@
     <string name="setting_custom_bg_enabled">Custom Background</string>
     <string name="setting_custom_bg_disabled">Dynamic Colors</string>
     <string name="setting_custom_bg_pick_gallery_title">Set custom Background for Apps</string>
-    <string name="setting_custom_bg_pick_gallery_description">Select an image from your device.\nRequires a Gallery or File Explorer app.</string>
-    <string name="custom_bg_set_success">Custom background set successfully!</string>
+    <string name="setting_custom_bg_pick_gallery_description">Select an image or video from your device.\nRequires a Gallery or File Explorer app.</string>
+    <string name="custom_bg_set_success">Custom background set successfully!\nNote: Videos might load slow on first start.</string>
 
 </resources>

@@ -13,7 +13,7 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 import java.io.File
 import androidx.core.net.toUri
-import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImagePickerHelper
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 
 class SettingsFragment : GuidedStepSupportFragment() {
 
@@ -27,6 +27,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
     }
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
+        PreferencesManager.lastWallpaper = ""
         // Custom App Background Toggle
         val isCustomBgEnabled = PreferencesManager.useCustomAppBackground
         val actionCustomBgToggle = GuidedAction.Builder(context)
@@ -124,7 +125,8 @@ class SettingsFragment : GuidedStepSupportFragment() {
     private fun openGalleryPicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/*"
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
         }
         try {
             startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
@@ -151,25 +153,23 @@ class SettingsFragment : GuidedStepSupportFragment() {
         if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
             data?.data?.let { uri ->
                 val context = requireContext()
-                val file = ImagePickerHelper.copyImageFromUri(context, uri)
+                val file = BackgroundPickerHelper.copyBackgroundFromUri(context, uri)
                 if (file != null && file.exists()) {
-                    // Delete old file if it exists
-                    if(PreferencesManager.customAppBackgroundName != null) {
-                        val oldFile = ImagePickerHelper.getCustomBackgroundFile(
-                            context,
-                            PreferencesManager.customAppBackgroundName!!
-                        )
-                        if (oldFile.exists()) {
+                    // Delete old file if it exists to avoid cluttering cache
+                    PreferencesManager.customAppBackgroundName?.let { oldName ->
+                        val oldFile = BackgroundPickerHelper.getCustomBackgroundFile(context, oldName)
+                        if (oldFile.exists() && oldFile.name != file.name) {
                             oldFile.delete()
                         }
                     }
+                    
                     PreferencesManager.customAppBackgroundName = file.name
                     PreferencesManager.useCustomAppBackground = true
                     updateToggleAction()
-                    Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_LONG).show()
                     println("Custom background set from gallery: ${file.absolutePath}")
                 } else {
-                    Toast.makeText(context, "Failed to copy image", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to copy file", Toast.LENGTH_SHORT).show()
                 }
             }
         }

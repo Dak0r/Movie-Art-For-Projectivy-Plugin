@@ -23,9 +23,8 @@ fun getCacheFile(context: Context, fileName: String): File {
 fun exposeFileToOtherApps(context: Context, cacheFile: File): Uri {
 
     val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.provider", cacheFile)
-    // Grant read permission to all apps (optional: restrict to specific apps using their package name)
     context.grantUriPermission(
-        "com.spocky.projengmenu", // Replace with the receiving app's package name
+        "com.spocky.projengmenu", // The receiving app's package name
         fileUri,
         Intent.FLAG_GRANT_READ_URI_PERMISSION
     )

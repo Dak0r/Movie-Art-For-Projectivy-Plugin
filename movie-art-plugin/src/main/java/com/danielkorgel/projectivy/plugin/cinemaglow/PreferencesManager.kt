@@ -11,15 +11,17 @@ import com.google.gson.reflect.TypeToken
 object PreferencesManager {
     lateinit var preferences: SharedPreferences
 
-    // Preference keys for custom app background
+    // Preference keys
     const val APP_BACKGROUND = "app_background"
     const val KEY_CUSTOM_APP_BACKGROUND_NAME = "custom_app_background_path"
+    const val KEY_LAST_WALLPAPER = "last_wallpaper"
+    const val KEY_LAST_CALLING_PID = "last_calling_pid"
+    const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
     }
 
-    // Custom app background helpers
     var useCustomAppBackground: Boolean
         get() = get(APP_BACKGROUND, "DynamicColors") == "CustomBackground"
         set(value) = set(APP_BACKGROUND, if (value) "CustomBackground" else "DynamicColors")
@@ -30,6 +32,18 @@ object PreferencesManager {
             return if (path.isEmpty()) null else path
         }
         set(value) = set(KEY_CUSTOM_APP_BACKGROUND_NAME, value ?: "")
+
+    var lastWallpaper: String
+        get() = get(KEY_LAST_WALLPAPER, "")
+        set(value) = set(KEY_LAST_WALLPAPER, value)
+
+    var lastCallingPid: Int
+        get() = get(KEY_LAST_CALLING_PID, -1)
+        set(value) = set(KEY_LAST_CALLING_PID, value)
+
+    var videoForcedUpdateCount: Int
+        get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
+        set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
 
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
@@ -56,7 +70,7 @@ object PreferencesManager {
             Int::class -> preferences.getInt(key, defaultValue as? Int ?: -1) as T
             Boolean::class -> preferences.getBoolean(key, defaultValue as? Boolean ?: false) as T
             Float::class -> preferences.getFloat(key, defaultValue as? Float ?: -1f) as T
-            Long::class -> preferences.getLong(key, defaultValue as? Long ?: -1) as T
+            Long::class -> preferences.getLong(key, defaultValue as? Long ?: -1L) as T
             else -> throw UnsupportedOperationException("Not yet implemented")
         }
 
@@ -80,7 +94,7 @@ object PreferencesManager {
                     is Double -> editor.putFloat(key, value.toFloat())
                     is Float -> editor.putFloat(key, value)
                     is Int -> editor.putInt(key, value)
-                    is Long -> editor.putInt(key, value.toInt())
+                    is Long -> editor.putLong(key, value)
                     is String -> editor.putString(key, value)
                     is ArrayList<*> -> editor.putStringSet(key, java.util.HashSet(value as java.util.ArrayList<String>))
                     is Set<*> -> editor.putStringSet(key, value as Set<String>)
