@@ -49,11 +49,11 @@ class WallpaperProviderService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         
-        // When the service is destroyed, check if the screen is off.
+        // When the service is destroyed, check if the screen is off to detect sleep states.
         // If it is off, we should reset the wallpaper
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         if (!pm.isInteractive) {
-            println("Service destroyed while screen is OFF. Reset Last Wallpaper.")
+            println("Service destroyed while screen is OFF. Assuming Sleep or Power off. Reset Last Wallpaper.")
             PreferencesManager.lastWallpaper = ""
         } else {
             println("Service destroyed while screen is ON (likely app switch).")
@@ -76,9 +76,9 @@ class WallpaperProviderService : Service() {
                 // If the app was restarted, we can't be sure that it remembers the the last wallpaper
                 // we sent. So we always send it in that case.
                 PreferencesManager.lastWallpaper = ""
-                // After a full device reboot, the first call to set a video wallpaper sometimes fails
-                // So we always send videos for the first few calls after Projectivy was started
-                // (even if it was just the app that was restarted no the whole device. Because we don't know.)
+                // After a full device reboot, the first call to set a larger video wallpaper sometimes fails.
+                // So we always send videos for the first few calls after Projectivy was started.
+                // (accepting that this is also triggered on every app restart, but reboots are more likely for a luncher I guess)
                 PreferencesManager.videoForcedUpdateCount = 2
 
                 PreferencesManager.lastCallingPid = currentPid
