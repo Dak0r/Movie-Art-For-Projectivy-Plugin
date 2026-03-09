@@ -40,7 +40,7 @@ fun downloadFile(context: Context, imageUrl: String, targetUri: Uri): Uri {
         val response = client.newCall(request).execute()
         if (!response.isSuccessful) throw Exception("Failed to download image: ${response.code}")
 
-        val inputStream = response.body?.byteStream() ?: throw Exception("Response body is null")
+        val inputStream = response.body.byteStream()
 
         // Write the data directly to the target URI's output stream
         context.contentResolver.openOutputStream(targetUri)?.use { outputStream ->

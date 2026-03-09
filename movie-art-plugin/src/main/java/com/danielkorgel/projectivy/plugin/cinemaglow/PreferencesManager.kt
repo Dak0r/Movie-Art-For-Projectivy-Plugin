@@ -11,8 +11,15 @@ import com.google.gson.reflect.TypeToken
 object PreferencesManager {
     lateinit var preferences: SharedPreferences
 
+    enum class FallbackBackground(val text: String) {
+        PopularMoviesAndShows("Popular Movies And Shows"),
+        DynamicColors("Dynamic Colors"),
+        CustomBackground("Custom Background");
+    }
+
     // Preference keys
     const val APP_BACKGROUND = "app_background"
+    const val FALLBACK_BACKGROUND = "fallback_background"
     const val KEY_CUSTOM_APP_BACKGROUND_NAME = "custom_app_background_path"
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
@@ -20,16 +27,23 @@ object PreferencesManager {
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        // Migrate legacy setting
+        val legacySetting = get(APP_BACKGROUND, "")
+        if(legacySetting == FallbackBackground.CustomBackground.name) {
+            set(FALLBACK_BACKGROUND, FallbackBackground.CustomBackground.name)
+            set(APP_BACKGROUND, "")
+        }
     }
 
-    var useCustomAppBackground: Boolean
-        get() = get(APP_BACKGROUND, "DynamicColors") == "CustomBackground"
-        set(value) = set(APP_BACKGROUND, if (value) "CustomBackground" else "DynamicColors")
+    var fallbackBackground: FallbackBackground
+        get() = FallbackBackground.valueOf(get(FALLBACK_BACKGROUND, FallbackBackground.PopularMoviesAndShows.name))
+        set(value) = set(FALLBACK_BACKGROUND, value.name)
+
 
     var customAppBackgroundName: String?
         get() {
             val path: String = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
-            return if (path.isEmpty()) null else path
+            return path.ifEmpty { null }
         }
         set(value) = set(KEY_CUSTOM_APP_BACKGROUND_NAME, value ?: "")
 
@@ -53,12 +67,12 @@ object PreferencesManager {
 
     operator fun set(key: String, value: Any?) =
         when (value) {
-            is String? -> preferences.edit { it.putString(key, value) }
+            is String -> preferences.edit { it.putString(key, value) }
             is Int -> preferences.edit { it.putInt(key, value) }
             is Boolean -> preferences.edit { it.putBoolean(key, value) }
             is Float -> preferences.edit { it.putFloat(key, value) }
             is Long -> preferences.edit { it.putLong(key, value) }
-            else -> throw UnsupportedOperationException("Not yet implemented")
+            else -> throw UnsupportedOperationException("Not yet implemented: ${value?.javaClass?.simpleName}")
         }
 
     inline operator fun <reified T : Any> get(

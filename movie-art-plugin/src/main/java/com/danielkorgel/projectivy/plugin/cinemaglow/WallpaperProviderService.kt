@@ -14,6 +14,7 @@ import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.Utils.cleanString
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.getCacheFile
@@ -26,6 +27,9 @@ class WallpaperProviderService : Service() {
 
     val that = this
     var apiCache: ApiResponseCache? = null
+    var tmdbApi: TMDbApi? = null
+
+
 
     fun fileUriExists(context: Context, fileUri: Uri): Boolean {
         return try {
@@ -43,6 +47,8 @@ class WallpaperProviderService : Service() {
             this,
             Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
         )
+        tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY, apiCache)
+
         println("Service created")
     }
 
@@ -100,36 +106,16 @@ class WallpaperProviderService : Service() {
                         )
                         if (!fileUriExists(that, Uri.fromFile(file))) {
                             try {
-                                var downloadUrl: String? = null
-                                apiCache?.let { cache ->
-                                    if (cache.containsKey(cleanName)) {
-                                        downloadUrl = cache.get(cleanName)
-                                        println("Found Cached Api Response for $title -> $downloadUrl")
-                                    }
-                                }
-
-                                if (downloadUrl == null) {
-                                    val tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY)
-                                    val backgroundImageUrl =
-                                        tmdbApi.fetchBackgroundImage(cleanName)
-                                    if (backgroundImageUrl != null) {
-                                        println("TMDB Background image URL: $backgroundImageUrl")
-                                        apiCache?.put(cleanName, backgroundImageUrl)
-                                        downloadUrl = backgroundImageUrl
-                                    } else {
-                                        println("TMDB: No background image found for the title: $title ($cleanName)")
-                                        apiCache?.put(cleanName, "None")
-                                    }
-                                }
-                                downloadUrl?.let { url ->
-                                    if (url != "None") {
-                                        downloadFile(
-                                            that,
-                                            url,
-                                            Uri.fromFile(file)
-                                        )
-                                        println("Download done: ${file.path}")
-                                    }
+                                val backgroundImageUrl =
+                                    tmdbApi?.fetchBackgroundImageForTitle(cleanName)
+                                if (backgroundImageUrl != null) {
+                                    println("TMDB Background image URL: $backgroundImageUrl")
+                                    downloadFile(
+                                        that,
+                                        backgroundImageUrl,
+                                        Uri.fromFile(file)
+                                    )
+                                    println("Download done: ${file.path}")
                                 }
                             } catch (e: Exception) {
                                 e.printStackTrace()
@@ -148,6 +134,8 @@ class WallpaperProviderService : Service() {
                             )
                         }
                     }
+
+                    // Fallback to icon of the card
                     event.iconUri?.let { iconUri ->
                         updateLastWallpaperSent(iconUri)
                         return listOf(
@@ -184,15 +172,6 @@ class WallpaperProviderService : Service() {
                 .build()
         }
 
-        fun cleanString(input: String): String {
-            // Remove content within square brackets (including the brackets)
-            val noBrackets = input.replace("\\[.*?]".toRegex(), " ")
-            // Replace all special characters with spaces
-            val noSpecialChars = java.net.URLEncoder.encode(noBrackets, "utf-8")
-            // Replace multiple sequential spaces with a single space
-            return noSpecialChars.replace("\\s+".toRegex(), " ").trim()
-        }
-
         private fun isVideoFile(fileName: String): Boolean {
             val extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
             val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
@@ -204,7 +183,8 @@ class WallpaperProviderService : Service() {
         ): List<Wallpaper> {
 
             // Check if custom background is enabled and exists
-            if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
+            if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.CustomBackground
+                && PreferencesManager.customAppBackgroundName != null) {
                 val fileName = PreferencesManager.customAppBackgroundName!!
                 val customBgFile = BackgroundPickerHelper.getCustomBackgroundFile(that, fileName)
                 if (customBgFile.exists()) {
@@ -238,7 +218,42 @@ class WallpaperProviderService : Service() {
                 }
             }
 
-            // Fallback to color extraction (original behavior)
+            if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+                try {
+                    val backgroundImageUrl =
+                        tmdbApi?.fetchBackgroundImagesForPopularTitles(TMDbApi.TimeWindow.DAY)?.random()
+                    if (backgroundImageUrl != null) {
+                        println("TMDB Background image URL: $backgroundImageUrl")
+                        val file = getCacheFile(
+                            that,
+                            "backdrop_${cleanString(backgroundImageUrl)}.jpg"
+                        )
+                        if(!fileUriExists(that, Uri.fromFile(file))) {
+                            downloadFile(
+                                that,
+                                backgroundImageUrl,
+                                Uri.fromFile(file)
+                            )
+                            println("Download done: ${file.path}")
+                        }
+                        if (fileUriExists(that, Uri.fromFile(file))) {
+                            val shareableUri = exposeFileToOtherApps(that, file).toString()
+                            updateLastWallpaperSent(shareableUri)
+                            return listOf(
+                                Wallpaper(
+                                    shareableUri,
+                                    WallpaperType.IMAGE,
+                                    author = "themoviedb.org"
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // Fallback to dynamic colors
             if (event is Event.CardFocused) {
                 try {
                     val file = getCacheFile(

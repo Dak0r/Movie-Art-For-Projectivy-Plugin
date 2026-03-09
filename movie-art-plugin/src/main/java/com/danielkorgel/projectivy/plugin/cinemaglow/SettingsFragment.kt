@@ -29,14 +29,13 @@ class SettingsFragment : GuidedStepSupportFragment() {
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         PreferencesManager.lastWallpaper = ""
         // Custom App Background Toggle
-        val isCustomBgEnabled = PreferencesManager.useCustomAppBackground
-        val actionCustomBgToggle = GuidedAction.Builder(context)
-            .id(ACTION_ID_CUSTOM_BG_TOGGLE)
+        val fallbackBackground = GuidedAction.Builder(context)
+            .id(ACTION_ID_FALLBACK_BG_TOGGLE)
             .title(R.string.setting_custom_bg_title)
-            .description(if (isCustomBgEnabled) R.string.setting_custom_bg_enabled else R.string.setting_custom_bg_disabled)
+            .description(PreferencesManager.fallbackBackground.text)
             .descriptionEditable(false)
             .build()
-        actions.add(actionCustomBgToggle)
+        actions.add(fallbackBackground)
 
         // Pick from Gallery
         val actionPickGallery = GuidedAction.Builder(context)
@@ -77,16 +76,25 @@ class SettingsFragment : GuidedStepSupportFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ACTION_ID_CUSTOM_BG_TOGGLE -> {
-                val newState = !PreferencesManager.useCustomAppBackground
-                PreferencesManager.useCustomAppBackground = newState
+            ACTION_ID_FALLBACK_BG_TOGGLE -> {
+                val newState: PreferencesManager.FallbackBackground = when (PreferencesManager.fallbackBackground) {
+                    PreferencesManager.FallbackBackground.PopularMoviesAndShows -> {
+                        PreferencesManager.FallbackBackground.DynamicColors
+                    }
+
+                    PreferencesManager.FallbackBackground.DynamicColors -> {
+                        PreferencesManager.FallbackBackground.CustomBackground
+                    }
+
+                    else -> {
+                        PreferencesManager.FallbackBackground.PopularMoviesAndShows
+                    }
+                }
+                PreferencesManager.fallbackBackground = newState
                 // Update the action description
-                action.description = getString(
-                    if (newState) R.string.setting_custom_bg_enabled 
-                    else R.string.setting_custom_bg_disabled
-                )
-                notifyActionChanged(findActionPositionById(ACTION_ID_CUSTOM_BG_TOGGLE))
-                println("Custom background toggled: $newState")
+                action.description = newState.text
+                notifyActionChanged(findActionPositionById(ACTION_ID_FALLBACK_BG_TOGGLE))
+                println("Fallback background changed: $newState")
             }
 
             ACTION_ID_PICK_GALLERY -> {
@@ -136,13 +144,10 @@ class SettingsFragment : GuidedStepSupportFragment() {
     }
 
     private fun updateToggleAction() {
-        val position = findActionPositionById(ACTION_ID_CUSTOM_BG_TOGGLE)
+        val position = findActionPositionById(ACTION_ID_FALLBACK_BG_TOGGLE)
         if (position >= 0) {
             val action = actions[position]
-            action.description = getString(
-                if (PreferencesManager.useCustomAppBackground) R.string.setting_custom_bg_enabled
-                else R.string.setting_custom_bg_disabled
-            )
+            action.description = PreferencesManager.fallbackBackground.text
             notifyActionChanged(position)
         }
     }
@@ -164,7 +169,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
                     }
                     
                     PreferencesManager.customAppBackgroundName = file.name
-                    PreferencesManager.useCustomAppBackground = true
+                    PreferencesManager.fallbackBackground = PreferencesManager.FallbackBackground.CustomBackground
                     updateToggleAction()
                     Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_LONG).show()
                     println("Custom background set from gallery: ${file.absolutePath}")
@@ -179,7 +184,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
         private const val ACTION_ID_CLEAR_CACHE = 1L
         private const val ACTION_ID_GET_PROJECTIVY = 2L
         private const val ACTION_ID_ABOUT = 3L
-        private const val ACTION_ID_CUSTOM_BG_TOGGLE = 4L
+        private const val ACTION_ID_FALLBACK_BG_TOGGLE = 4L
         private const val ACTION_ID_PICK_GALLERY = 5L
 
         private const val REQUEST_CODE_PICK_IMAGE = 100
