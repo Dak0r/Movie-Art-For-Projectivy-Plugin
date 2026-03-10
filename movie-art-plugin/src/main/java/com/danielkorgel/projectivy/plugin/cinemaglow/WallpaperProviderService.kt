@@ -99,16 +99,14 @@ class WallpaperProviderService : Service() {
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
                     event.title?.let { title ->
-                        val cleanName = cleanString(title)
-                        val file = getCacheFile(
-                            that,
-                            "backdrop_${cleanName}.jpg"
-                        )
-                        if (!fileUriExists(that, Uri.fromFile(file))) {
-                            try {
-                                val backgroundImageUrl =
-                                    tmdbApi?.fetchBackgroundImageForTitle(cleanName)
-                                if (backgroundImageUrl != null) {
+                        val backgroundImageUrl = tmdbApi?.fetchBackgroundImageForTitle(title)
+                        var file: java.io.File? = null
+                        if (backgroundImageUrl != null) {
+                            val filename = backgroundImageUrl.substringAfterLast("/")
+                            file = getCacheFile(that,"backdrop_${filename}")
+                            if (!fileUriExists(that, Uri.fromFile(file))) {
+                                try {
+
                                     println("TMDB Background image URL: $backgroundImageUrl")
                                     downloadFile(
                                         that,
@@ -116,13 +114,14 @@ class WallpaperProviderService : Service() {
                                         Uri.fromFile(file)
                                     )
                                     println("Download done: ${file.path}")
+
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
                             }
                         }
 
-                        if (fileUriExists(that, Uri.fromFile(file))) {
+                        if (file != null && fileUriExists(that, Uri.fromFile(file))) {
                             val shareableUri = exposeFileToOtherApps(that, file).toString()
                             updateLastWallpaperSent(shareableUri)
                             return listOf(
@@ -230,7 +229,6 @@ class WallpaperProviderService : Service() {
                     if (backgroundImageUrl != null) {
                         updateLastWallpaperSent(backgroundImageUrl)
                         println("TMDB Background image URL: $backgroundImageUrl")
-                        // get file name from url:
                         val filename = backgroundImageUrl.substringAfterLast("/")
                         val file = getCacheFile(that,"backdrop_${filename}")
                         if(!fileUriExists(that, Uri.fromFile(file))) {

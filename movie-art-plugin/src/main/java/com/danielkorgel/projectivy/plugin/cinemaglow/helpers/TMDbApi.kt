@@ -43,7 +43,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
             val searchResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
             if (!searchResponse.isSuccessful) throw Exception("Failed to fetch search results: ${searchResponse.code}")
             response = searchResponse.body.string()
-            apiCache?.put(cleanUrl, response)
+            apiCache?.put(cleanUrl, response, 604800) // Cache for 7 days
         }
 
         val searchResult = gson.fromJson(response, SearchResult::class.java)
