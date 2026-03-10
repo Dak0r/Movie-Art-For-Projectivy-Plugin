@@ -220,14 +220,19 @@ class WallpaperProviderService : Service() {
 
             if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
                 try {
-                    val backgroundImageUrl =
-                        tmdbApi?.fetchBackgroundImagesForPopularTitles(TMDbApi.TimeWindow.DAY)?.random()
+                    var backgroundImageUrl:String? = null
+                    var maxTries = 5
+                    do {
+                        backgroundImageUrl = tmdbApi?.fetchBackgroundImagesForPopularTitles(TMDbApi.TimeWindow.DAY)
+                            ?.random()
+                        maxTries--
+                    }while((backgroundImageUrl == null || backgroundImageUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
                     if (backgroundImageUrl != null) {
+                        updateLastWallpaperSent(backgroundImageUrl)
                         println("TMDB Background image URL: $backgroundImageUrl")
-                        val file = getCacheFile(
-                            that,
-                            "backdrop_${cleanString(backgroundImageUrl)}.jpg"
-                        )
+                        // get file name from url:
+                        val filename = backgroundImageUrl.substringAfterLast("/")
+                        val file = getCacheFile(that,"backdrop_${filename}")
                         if(!fileUriExists(that, Uri.fromFile(file))) {
                             downloadFile(
                                 that,
@@ -238,7 +243,6 @@ class WallpaperProviderService : Service() {
                         }
                         if (fileUriExists(that, Uri.fromFile(file))) {
                             val shareableUri = exposeFileToOtherApps(that, file).toString()
-                            updateLastWallpaperSent(shareableUri)
                             return listOf(
                                 Wallpaper(
                                     shareableUri,
