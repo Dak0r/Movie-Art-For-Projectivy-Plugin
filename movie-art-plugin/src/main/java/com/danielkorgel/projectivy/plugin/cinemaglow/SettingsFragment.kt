@@ -46,15 +46,6 @@ class SettingsFragment : GuidedStepSupportFragment() {
             .build()
         actions.add(actionPickGallery)
 
-        // Clear Cache
-        val actionClearCache = GuidedAction.Builder(context)
-            .id(ACTION_ID_CLEAR_CACHE)
-            .title(R.string.setting_clear_cache_title)
-            .description(R.string.setting_clear_cache_description)
-            .descriptionEditable(false)
-            .build()
-        actions.add(actionClearCache)
-
         // Get Projectivy
         val actionGetProjectIvy = GuidedAction.Builder(context)
             .id(ACTION_ID_GET_PROJECTIVY)
@@ -99,16 +90,6 @@ class SettingsFragment : GuidedStepSupportFragment() {
 
             ACTION_ID_PICK_GALLERY -> {
                 openGalleryPicker()
-            }
-
-            ACTION_ID_CLEAR_CACHE -> {
-                clearExternalCache(requireContext())
-                Toast.makeText(
-                    context,
-                    "Cache cleared!",
-                    Toast.LENGTH_LONG
-                ).show()
-                println("Cache cleared!")
             }
 
             ACTION_ID_GET_PROJECTIVY -> {
@@ -181,31 +162,11 @@ class SettingsFragment : GuidedStepSupportFragment() {
     }
 
     companion object {
-        private const val ACTION_ID_CLEAR_CACHE = 1L
-        private const val ACTION_ID_GET_PROJECTIVY = 2L
-        private const val ACTION_ID_ABOUT = 3L
-        private const val ACTION_ID_FALLBACK_BG_TOGGLE = 4L
-        private const val ACTION_ID_PICK_GALLERY = 5L
+        private const val ACTION_ID_GET_PROJECTIVY = 1L
+        private const val ACTION_ID_ABOUT = 2L
+        private const val ACTION_ID_FALLBACK_BG_TOGGLE = 3L
+        private const val ACTION_ID_PICK_GALLERY = 4L
 
         private const val REQUEST_CODE_PICK_IMAGE = 100
-    }
-
-    fun clearExternalCache(context: Context) {
-        val externalCacheDir: File? = context.externalCacheDir
-        if (externalCacheDir != null && externalCacheDir.isDirectory) {
-            deleteDirectoryContents(externalCacheDir)
-        }
-    }
-
-    private fun deleteDirectoryContents(dir: File): Boolean {
-        val files = dir.listFiles() ?: return false
-
-        for (file in files) {
-            if (file.isDirectory) {
-                deleteDirectoryContents(file)
-            }
-            file.delete()
-        }
-        return dir.delete()
     }
 }

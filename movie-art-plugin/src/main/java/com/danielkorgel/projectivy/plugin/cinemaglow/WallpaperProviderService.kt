@@ -15,6 +15,7 @@ import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHel
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.Utils.cleanString
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.cleanExpiredCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.getCacheFile
@@ -48,6 +49,8 @@ class WallpaperProviderService : Service() {
             Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
         )
         tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY, apiCache)
+
+        cleanExpiredCache(this)
 
         println("Service created")
     }
