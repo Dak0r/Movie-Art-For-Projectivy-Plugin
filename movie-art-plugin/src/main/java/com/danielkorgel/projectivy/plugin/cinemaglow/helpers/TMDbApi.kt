@@ -1,7 +1,5 @@
 package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.Utils.cleanString
 import okhttp3.OkHttpClient
 import okhttp3.Request

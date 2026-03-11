@@ -5,11 +5,9 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.webkit.MimeTypeMap
-import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
@@ -94,7 +92,7 @@ class WallpaperProviderService : Service() {
             return when (event) {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
-                    return fallbackWallpaper(event)
+                    fallbackWallpaper(event)
                 }
 
                 // When the focused "program" card changes
@@ -143,7 +141,7 @@ class WallpaperProviderService : Service() {
                         )
                     }
 
-                    return fallbackWallpaper(event)
+                    fallbackWallpaper(event)
                 }
                 // It's unexpected that we receive any other kind of event, but in case we do we ignore it.
                 // Returning an empty list won't change the currently displayed wallpaper.
