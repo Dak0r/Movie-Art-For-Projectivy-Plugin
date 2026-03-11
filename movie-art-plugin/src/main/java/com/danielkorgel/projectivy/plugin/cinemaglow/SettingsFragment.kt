@@ -3,7 +3,6 @@ package com.danielkorgel.projectivy.plugin.cinemaglow
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -11,7 +10,6 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
-import java.io.File
 import androidx.core.net.toUri
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 
@@ -31,8 +29,11 @@ class SettingsFragment : GuidedStepSupportFragment() {
         // Custom App Background Toggle
         val fallbackBackground = GuidedAction.Builder(context)
             .id(ACTION_ID_FALLBACK_BG_TOGGLE)
-            .title(R.string.setting_custom_bg_title)
-            .description(PreferencesManager.fallbackBackground.text)
+            .title(R.string.setting_fallback_bg_title)
+            .description(
+                getString(R.string.setting_fallback_bg_description,
+                    PreferencesManager.fallbackBackground.text)
+            )
             .descriptionEditable(false)
             .build()
         actions.add(fallbackBackground)
@@ -40,8 +41,8 @@ class SettingsFragment : GuidedStepSupportFragment() {
         // Pick from Gallery
         val actionPickGallery = GuidedAction.Builder(context)
             .id(ACTION_ID_PICK_GALLERY)
-            .title(R.string.setting_custom_bg_pick_gallery_title)
-            .description(R.string.setting_custom_bg_pick_gallery_description)
+            .title(R.string.setting_fallback_bg_pick_gallery_title)
+            .description(R.string.setting_fallback_bg_pick_gallery_description)
             .descriptionEditable(false)
             .build()
         actions.add(actionPickGallery)
@@ -83,7 +84,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
                 }
                 PreferencesManager.fallbackBackground = newState
                 // Update the action description
-                action.description = newState.text
+                action.description = getString(R.string.setting_fallback_bg_description, newState.text)
                 notifyActionChanged(findActionPositionById(ACTION_ID_FALLBACK_BG_TOGGLE))
                 println("Fallback background changed: $newState")
             }
@@ -152,7 +153,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
                     PreferencesManager.customAppBackgroundName = file.name
                     PreferencesManager.fallbackBackground = PreferencesManager.FallbackBackground.CustomBackground
                     updateToggleAction()
-                    Toast.makeText(context, R.string.custom_bg_set_success, Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, R.string.fallback_bg_set_success, Toast.LENGTH_LONG).show()
                     println("Custom background set from gallery: ${file.absolutePath}")
                 } else {
                     Toast.makeText(context, "Failed to copy file", Toast.LENGTH_SHORT).show()

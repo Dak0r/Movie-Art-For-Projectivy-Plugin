@@ -12,7 +12,7 @@ object PreferencesManager {
     lateinit var preferences: SharedPreferences
 
     enum class FallbackBackground(val text: String) {
-        PopularMoviesAndShows("Popular Movies And Shows"),
+        PopularMoviesAndShows("Popular Movies and Shows"),
         DynamicColors("Dynamic Colors"),
         CustomBackground("Custom Background");
     }
