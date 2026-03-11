@@ -26,11 +26,11 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchBackgroundImageForTitle(title: String): String? {
 
-        val cleanName = Utils.cleanString(title)
+        val cleanName = cleanString(title)
         val language = Locale.getDefault().language
         val requestUrl = "$baseUrl/search/multi?api_key=$apiKey&page=1&language=$language&query=${java.net.URLEncoder.encode(cleanName, "UTF-8")}"
 
-        val cleanUrl = cleanString(requestUrl);
+        val cleanUrl = cleanString(requestUrl)
         var response: String? = null
         apiCache?.let { cache ->
             if (cache.containsKey(cleanUrl)) {
@@ -55,6 +55,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         return bestMatch.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
     }
 
+    @Suppress("unused")
     enum class TimeWindow(val value: String) {
         DAY("day"),
         WEEK("week")
@@ -72,7 +73,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         val timeWindowParam = timeWindow.value
         val requestUrl = "$baseUrl/trending/all/$timeWindowParam?api_key=$apiKey&page=1&language=$language}"
 
-        val cleanUrl = cleanString(requestUrl);
+        val cleanUrl = cleanString(requestUrl)
         var response: String? = null
         apiCache?.let { cache ->
             if (cache.containsKey(cleanUrl)) {

@@ -14,7 +14,6 @@ import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
-import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.Utils.cleanString
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.cleanExpiredCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps

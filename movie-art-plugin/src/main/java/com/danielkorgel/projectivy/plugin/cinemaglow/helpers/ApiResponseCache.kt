@@ -60,11 +60,6 @@ class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
         saveCacheToFile()
     }
 
-    fun clear() {
-        cache.clear()
-        saveCacheToFile()
-    }
-
     fun containsKey(key: String): Boolean {
         val entry = cache[key] ?: return false
         if (entry.expiresAt == null || System.currentTimeMillis() > entry.expiresAt) {
