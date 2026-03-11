@@ -23,7 +23,6 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
      * @param title The title of the movie or TV show.
      * @return The URL of the background image or null if not found.
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun fetchBackgroundImageForTitle(title: String): String? {
 
         val cleanName = cleanString(title)
@@ -66,7 +65,6 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
      * @param timeWindow The time window for which to fetch popular titles.
      * @return The URL of the background image or null if not found.
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun fetchBackgroundImagesForPopularTitles(timeWindow: TimeWindow): List<String> {
         // https://api.themoviedb.org/3/trending/all/day
         val language = Locale.getDefault().language

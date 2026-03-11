@@ -74,7 +74,6 @@ class WallpaperProviderService : Service() {
     }
 
     private val binder = object : IWallpaperProviderService.Stub() {
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun getWallpapers(event: Event?): List<Wallpaper> {
 
             // Check if Projectivy was restarted since the last call:
