@@ -185,8 +185,8 @@ class WallpaperProviderService : Service() {
 
             // Check if custom background is enabled and exists
             if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.CustomBackground
-                && PreferencesManager.customAppBackgroundName != null) {
-                val fileName = PreferencesManager.customAppBackgroundName!!
+                && PreferencesManager.customFallbackBackgroundName != null) {
+                val fileName = PreferencesManager.customFallbackBackgroundName!!
                 val customBgFile = BackgroundPickerHelper.getCustomBackgroundFile(that, fileName)
                 if (customBgFile.exists()) {
                     try {

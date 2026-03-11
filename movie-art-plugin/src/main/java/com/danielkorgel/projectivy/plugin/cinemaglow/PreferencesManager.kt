@@ -18,9 +18,10 @@ object PreferencesManager {
     }
 
     // Preference keys
-    const val APP_BACKGROUND = "app_background"
-    const val FALLBACK_BACKGROUND = "fallback_background"
+    const val KEY_APP_BACKGROUND = "app_background"
     const val KEY_CUSTOM_APP_BACKGROUND_NAME = "custom_app_background_path"
+    const val KEY_FALLBACK_BACKGROUND = "fallback_background"
+    const val KEY_CUSTOM_FALLBACK_BACKGROUND_NAME = "custom_fallback_background_path"
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
     const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
@@ -28,24 +29,29 @@ object PreferencesManager {
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
         // Migrate legacy setting
-        val legacySetting = get(APP_BACKGROUND, "")
+        val legacySetting = get(KEY_APP_BACKGROUND, "")
         if(legacySetting == FallbackBackground.CustomBackground.name) {
-            set(FALLBACK_BACKGROUND, FallbackBackground.CustomBackground.name)
-            set(APP_BACKGROUND, "")
+            set(KEY_FALLBACK_BACKGROUND, FallbackBackground.CustomBackground.name)
+            set(KEY_APP_BACKGROUND, "")
+        }
+        val legacyCustomBg = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+        if (legacyCustomBg != "") {
+            set(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, legacyCustomBg)
+            set(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
         }
     }
 
     var fallbackBackground: FallbackBackground
-        get() = FallbackBackground.valueOf(get(FALLBACK_BACKGROUND, FallbackBackground.PopularMoviesAndShows.name))
-        set(value) = set(FALLBACK_BACKGROUND, value.name)
+        get() = FallbackBackground.valueOf(get(KEY_FALLBACK_BACKGROUND, FallbackBackground.PopularMoviesAndShows.name))
+        set(value) = set(KEY_FALLBACK_BACKGROUND, value.name)
 
 
-    var customAppBackgroundName: String?
+    var customFallbackBackgroundName: String?
         get() {
-            val path: String = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+            val path: String = get(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, "")
             return path.ifEmpty { null }
         }
-        set(value) = set(KEY_CUSTOM_APP_BACKGROUND_NAME, value ?: "")
+        set(value) = set(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, value ?: "")
 
     var lastWallpaper: String
         get() = get(KEY_LAST_WALLPAPER, "")

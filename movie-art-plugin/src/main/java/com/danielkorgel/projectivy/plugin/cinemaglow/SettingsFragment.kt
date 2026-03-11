@@ -143,14 +143,14 @@ class SettingsFragment : GuidedStepSupportFragment() {
                 val file = BackgroundPickerHelper.copyBackgroundFromUri(context, uri)
                 if (file != null && file.exists()) {
                     // Delete old file if it exists to avoid cluttering cache
-                    PreferencesManager.customAppBackgroundName?.let { oldName ->
+                    PreferencesManager.customFallbackBackgroundName?.let { oldName ->
                         val oldFile = BackgroundPickerHelper.getCustomBackgroundFile(context, oldName)
                         if (oldFile.exists() && oldFile.name != file.name) {
                             oldFile.delete()
                         }
                     }
                     
-                    PreferencesManager.customAppBackgroundName = file.name
+                    PreferencesManager.customFallbackBackgroundName = file.name
                     PreferencesManager.fallbackBackground = PreferencesManager.FallbackBackground.CustomBackground
                     updateToggleAction()
                     Toast.makeText(context, R.string.fallback_bg_set_success, Toast.LENGTH_LONG).show()

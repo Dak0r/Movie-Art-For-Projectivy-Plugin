@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.danielkorgel.projectivy.plugin.cinemaglow.PreferencesManager
 import java.io.File
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -36,8 +37,9 @@ fun cleanExpiredCache(context: Context, maxAgeDays: Int = 7) {
             val threshold = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(maxAgeDays.toLong())
 
             cacheDir.listFiles()?.forEach { file ->
-                // Keep the core API cache file regardless of age
+                // Keep the core API cache file and custom background regardless of age
                 if (file.name == "tmdb_api_cache.json") return@forEach
+                if (file.name == PreferencesManager.customFallbackBackgroundName) return@forEach
 
                 if (file.isFile && file.lastModified() < threshold) {
                     println("FileCache: Deleting unused file from cache: ${file.name}")
