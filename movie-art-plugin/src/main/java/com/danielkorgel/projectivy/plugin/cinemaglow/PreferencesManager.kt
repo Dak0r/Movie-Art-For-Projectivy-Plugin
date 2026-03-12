@@ -25,6 +25,7 @@ object PreferencesManager {
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
     const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
+    const val KEY_LAST_CACHE_CLEAN = "last_cache_clean"
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -64,6 +65,10 @@ object PreferencesManager {
     var videoForcedUpdateCount: Int
         get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
         set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
+
+    var lastCacheClean: Long
+        get() = get(KEY_LAST_CACHE_CLEAN, 0L)
+        set(value) = set(KEY_LAST_CACHE_CLEAN, value)
 
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
