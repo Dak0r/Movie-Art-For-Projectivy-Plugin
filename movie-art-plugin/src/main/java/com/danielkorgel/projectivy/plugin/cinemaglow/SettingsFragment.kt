@@ -83,9 +83,7 @@ class SettingsFragment : GuidedStepSupportFragment() {
                     }
                 }
                 PreferencesManager.fallbackBackground = newState
-                // Update the action description
-                action.description = getString(R.string.setting_fallback_bg_description, newState.text)
-                notifyActionChanged(findActionPositionById(ACTION_ID_FALLBACK_BG_TOGGLE))
+                updateToggleAction()
                 println("Fallback background changed: $newState")
             }
 
@@ -129,7 +127,10 @@ class SettingsFragment : GuidedStepSupportFragment() {
         val position = findActionPositionById(ACTION_ID_FALLBACK_BG_TOGGLE)
         if (position >= 0) {
             val action = actions[position]
-            action.description = PreferencesManager.fallbackBackground.text
+            action.description = getString(
+                R.string.setting_fallback_bg_description,
+                PreferencesManager.fallbackBackground.text
+            )
             notifyActionChanged(position)
         }
     }
