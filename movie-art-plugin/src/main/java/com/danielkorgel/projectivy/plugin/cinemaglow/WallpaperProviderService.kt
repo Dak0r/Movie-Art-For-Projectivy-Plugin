@@ -5,15 +5,14 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.webkit.MimeTypeMap
-import androidx.annotation.RequiresApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.cleanExpiredCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.getCacheFile
@@ -26,6 +25,9 @@ class WallpaperProviderService : Service() {
 
     val that = this
     var apiCache: ApiResponseCache? = null
+    var tmdbApi: TMDbApi? = null
+
+
 
     fun fileUriExists(context: Context, fileUri: Uri): Boolean {
         return try {
@@ -43,6 +45,16 @@ class WallpaperProviderService : Service() {
             this,
             Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
         )
+        tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY, apiCache)
+
+        val currentTime = System.currentTimeMillis()
+        val oneDayInMillis = 24 * 60 * 60 * 1000L
+        if (currentTime - PreferencesManager.lastCacheClean > oneDayInMillis) {
+            println("Cleaning Cache once in 24hrs")
+            cleanExpiredCache(this)
+            PreferencesManager.lastCacheClean = currentTime
+        }
+
         println("Service created")
     }
 
@@ -66,7 +78,6 @@ class WallpaperProviderService : Service() {
     }
 
     private val binder = object : IWallpaperProviderService.Stub() {
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun getWallpapers(event: Event?): List<Wallpaper> {
 
             // Check if Projectivy was restarted since the last call:
@@ -87,56 +98,35 @@ class WallpaperProviderService : Service() {
             return when (event) {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
-                    return fallbackWallpaper(event)
+                    fallbackWallpaper(event)
                 }
 
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
                     event.title?.let { title ->
-                        val cleanName = cleanString(title)
-                        val file = getCacheFile(
-                            that,
-                            "backdrop_${cleanName}.jpg"
-                        )
-                        if (!fileUriExists(that, Uri.fromFile(file))) {
-                            try {
-                                var downloadUrl: String? = null
-                                apiCache?.let { cache ->
-                                    if (cache.containsKey(cleanName)) {
-                                        downloadUrl = cache.get(cleanName)
-                                        println("Found Cached Api Response for $title -> $downloadUrl")
-                                    }
-                                }
+                        val backgroundImageUrl = tmdbApi?.fetchBackgroundImageForTitle(title)
+                        var file: java.io.File? = null
+                        if (backgroundImageUrl != null) {
+                            val filename = backgroundImageUrl.substringAfterLast("/")
+                            file = getCacheFile(that,"backdrop_${filename}")
+                            if (!fileUriExists(that, Uri.fromFile(file))) {
+                                try {
 
-                                if (downloadUrl == null) {
-                                    val tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY)
-                                    val backgroundImageUrl =
-                                        tmdbApi.fetchBackgroundImage(cleanName)
-                                    if (backgroundImageUrl != null) {
-                                        println("TMDB Background image URL: $backgroundImageUrl")
-                                        apiCache?.put(cleanName, backgroundImageUrl)
-                                        downloadUrl = backgroundImageUrl
-                                    } else {
-                                        println("TMDB: No background image found for the title: $title ($cleanName)")
-                                        apiCache?.put(cleanName, "None")
-                                    }
+                                    println("TMDB Background image URL: $backgroundImageUrl")
+                                    downloadFile(
+                                        that,
+                                        backgroundImageUrl,
+                                        Uri.fromFile(file)
+                                    )
+                                    println("Download done: ${file.path}")
+
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                                downloadUrl?.let { url ->
-                                    if (url != "None") {
-                                        downloadFile(
-                                            that,
-                                            url,
-                                            Uri.fromFile(file)
-                                        )
-                                        println("Download done: ${file.path}")
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
                             }
                         }
 
-                        if (fileUriExists(that, Uri.fromFile(file))) {
+                        if (file != null && fileUriExists(that, Uri.fromFile(file))) {
                             val shareableUri = exposeFileToOtherApps(that, file).toString()
                             updateLastWallpaperSent(shareableUri)
                             return listOf(
@@ -148,6 +138,8 @@ class WallpaperProviderService : Service() {
                             )
                         }
                     }
+
+                    // Fallback to icon of the card
                     event.iconUri?.let { iconUri ->
                         updateLastWallpaperSent(iconUri)
                         return listOf(
@@ -155,7 +147,7 @@ class WallpaperProviderService : Service() {
                         )
                     }
 
-                    return fallbackWallpaper(event)
+                    fallbackWallpaper(event)
                 }
                 // It's unexpected that we receive any other kind of event, but in case we do we ignore it.
                 // Returning an empty list won't change the currently displayed wallpaper.
@@ -184,15 +176,6 @@ class WallpaperProviderService : Service() {
                 .build()
         }
 
-        fun cleanString(input: String): String {
-            // Remove content within square brackets (including the brackets)
-            val noBrackets = input.replace("\\[.*?]".toRegex(), " ")
-            // Replace all special characters with spaces
-            val noSpecialChars = java.net.URLEncoder.encode(noBrackets, "utf-8")
-            // Replace multiple sequential spaces with a single space
-            return noSpecialChars.replace("\\s+".toRegex(), " ").trim()
-        }
-
         private fun isVideoFile(fileName: String): Boolean {
             val extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
             val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
@@ -204,8 +187,9 @@ class WallpaperProviderService : Service() {
         ): List<Wallpaper> {
 
             // Check if custom background is enabled and exists
-            if (PreferencesManager.useCustomAppBackground && PreferencesManager.customAppBackgroundName != null) {
-                val fileName = PreferencesManager.customAppBackgroundName!!
+            if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.CustomBackground
+                && PreferencesManager.customFallbackBackgroundName != null) {
+                val fileName = PreferencesManager.customFallbackBackgroundName!!
                 val customBgFile = BackgroundPickerHelper.getCustomBackgroundFile(that, fileName)
                 if (customBgFile.exists()) {
                     try {
@@ -238,7 +222,45 @@ class WallpaperProviderService : Service() {
                 }
             }
 
-            // Fallback to color extraction (original behavior)
+            if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+                try {
+                    var backgroundImageUrl:String? = null
+                    var maxTries = 5
+                    do {
+                        backgroundImageUrl = tmdbApi?.fetchBackgroundImagesForPopularTitles(TMDbApi.TimeWindow.DAY)
+                            ?.random()
+                        maxTries--
+                    }while((backgroundImageUrl == null || backgroundImageUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
+                    if (backgroundImageUrl != null) {
+                        updateLastWallpaperSent(backgroundImageUrl)
+                        println("TMDB Background image URL: $backgroundImageUrl")
+                        val filename = backgroundImageUrl.substringAfterLast("/")
+                        val file = getCacheFile(that,"backdrop_${filename}")
+                        if(!fileUriExists(that, Uri.fromFile(file))) {
+                            downloadFile(
+                                that,
+                                backgroundImageUrl,
+                                Uri.fromFile(file)
+                            )
+                            println("Download done: ${file.path}")
+                        }
+                        if (fileUriExists(that, Uri.fromFile(file))) {
+                            val shareableUri = exposeFileToOtherApps(that, file).toString()
+                            return listOf(
+                                Wallpaper(
+                                    shareableUri,
+                                    WallpaperType.IMAGE,
+                                    author = "themoviedb.org"
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // Fallback to dynamic colors
             if (event is Event.CardFocused) {
                 try {
                     val file = getCacheFile(

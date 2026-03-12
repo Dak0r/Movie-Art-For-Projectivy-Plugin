@@ -1,25 +1,21 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="plugin_name">Movie Art for Projectivy</string>
     <string name="plugin_description">
-        Setup:\nEnable in Projectivy Launcher Settings -> Appearance -> Wallpaper -> Movie Art for Projectivy.\nMovie and TV Show background art is fetched from TheMovieDB.org.
+        Setup:\nEnable in Projectivy Launcher Settings ➞ Appearance ➞ Wallpaper ➞ Movie Art for Projectivy.\nMovie and TV Show background art is fetched from TheMovieDB.org.
     </string>
     <string name="plugin_uuid" tools:ignore="TypographyDashes">b403e00e-a392-48bd-ab2e-fe6bb8e0cbda</string>
 
     <!-- Setting parameters -->
     <string name="settings">Settings</string>
-    <string name="setting_clear_cache_title">Clear Cache</string>
-    <string name="setting_clear_cache_description">Deletes all cached backgrounds and data.</string>
     <string name="setting_projectivy_title">Not using Projectivy, yet?</string>
     <string name="setting_projectivy_description">Get Projectivy (Pro) from the PlayStore.</string>
     <string name="setting_about_title">This plugin is Open Source</string>
     <string name="setting_about_description">Browse on GitHub.</string>
 
     <!-- Custom App Background Settings -->
-    <string name="setting_custom_bg_title">Background for Apps</string>
-    <string name="setting_custom_bg_enabled">Custom Background</string>
-    <string name="setting_custom_bg_disabled">Dynamic Colors</string>
-    <string name="setting_custom_bg_pick_gallery_title">Set custom Background for Apps</string>
-    <string name="setting_custom_bg_pick_gallery_description">Select an image or video from your device.\nRequires a Gallery or File Explorer app.</string>
-    <string name="custom_bg_set_success">Custom background set successfully!\nNote: Videos might load slow on first start.</string>
-
+    <string name="setting_fallback_bg_title">Fallback Background</string>
+    <string name="setting_fallback_bg_description">For cards that are not a movie or show\nᐅ %1$s</string>
+    <string name="setting_fallback_bg_pick_gallery_title">Set custom Fallback Background</string>
+    <string name="setting_fallback_bg_pick_gallery_description">Select an image or video from your device.\nRequires a Gallery or File Explorer app.</string>
+    <string name="fallback_bg_set_success">Custom background set successfully!\nNote: Videos might load slow on first start.</string>
 </resources>

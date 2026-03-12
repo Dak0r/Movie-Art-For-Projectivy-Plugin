@@ -11,27 +11,48 @@ import com.google.gson.reflect.TypeToken
 object PreferencesManager {
     lateinit var preferences: SharedPreferences
 
+    enum class FallbackBackground(val text: String) {
+        PopularMoviesAndShows("Popular Movies and Shows"),
+        DynamicColors("Dynamic Colors"),
+        CustomBackground("Custom Background");
+    }
+
     // Preference keys
-    const val APP_BACKGROUND = "app_background"
+    const val KEY_APP_BACKGROUND = "app_background"
     const val KEY_CUSTOM_APP_BACKGROUND_NAME = "custom_app_background_path"
+    const val KEY_FALLBACK_BACKGROUND = "fallback_background"
+    const val KEY_CUSTOM_FALLBACK_BACKGROUND_NAME = "custom_fallback_background_path"
     const val KEY_LAST_WALLPAPER = "last_wallpaper"
     const val KEY_LAST_CALLING_PID = "last_calling_pid"
     const val KEY_VIDEO_FORCED_UPDATE_COUNT = "video_forced_update_count"
+    const val KEY_LAST_CACHE_CLEAN = "last_cache_clean"
 
     fun init(context: Context) {
         preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        // Migrate legacy setting
+        val legacySetting = get(KEY_APP_BACKGROUND, "")
+        if(legacySetting == FallbackBackground.CustomBackground.name) {
+            set(KEY_FALLBACK_BACKGROUND, FallbackBackground.CustomBackground.name)
+            set(KEY_APP_BACKGROUND, "")
+        }
+        val legacyCustomBg = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+        if (legacyCustomBg != "") {
+            set(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, legacyCustomBg)
+            set(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+        }
     }
 
-    var useCustomAppBackground: Boolean
-        get() = get(APP_BACKGROUND, "DynamicColors") == "CustomBackground"
-        set(value) = set(APP_BACKGROUND, if (value) "CustomBackground" else "DynamicColors")
+    var fallbackBackground: FallbackBackground
+        get() = FallbackBackground.valueOf(get(KEY_FALLBACK_BACKGROUND, FallbackBackground.PopularMoviesAndShows.name))
+        set(value) = set(KEY_FALLBACK_BACKGROUND, value.name)
 
-    var customAppBackgroundName: String?
+
+    var customFallbackBackgroundName: String?
         get() {
-            val path: String = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
-            return if (path.isEmpty()) null else path
+            val path: String = get(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, "")
+            return path.ifEmpty { null }
         }
-        set(value) = set(KEY_CUSTOM_APP_BACKGROUND_NAME, value ?: "")
+        set(value) = set(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, value ?: "")
 
     var lastWallpaper: String
         get() = get(KEY_LAST_WALLPAPER, "")
@@ -45,6 +66,10 @@ object PreferencesManager {
         get() = get(KEY_VIDEO_FORCED_UPDATE_COUNT, 2)
         set(value) = set(KEY_VIDEO_FORCED_UPDATE_COUNT, value)
 
+    var lastCacheClean: Long
+        get() = get(KEY_LAST_CACHE_CLEAN, 0L)
+        set(value) = set(KEY_LAST_CACHE_CLEAN, value)
+
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
         operation(editor)
@@ -53,12 +78,12 @@ object PreferencesManager {
 
     operator fun set(key: String, value: Any?) =
         when (value) {
-            is String? -> preferences.edit { it.putString(key, value) }
+            is String -> preferences.edit { it.putString(key, value) }
             is Int -> preferences.edit { it.putInt(key, value) }
             is Boolean -> preferences.edit { it.putBoolean(key, value) }
             is Float -> preferences.edit { it.putFloat(key, value) }
             is Long -> preferences.edit { it.putLong(key, value) }
-            else -> throw UnsupportedOperationException("Not yet implemented")
+            else -> throw UnsupportedOperationException("Not yet implemented: ${value?.javaClass?.simpleName}")
         }
 
     inline operator fun <reified T : Any> get(
