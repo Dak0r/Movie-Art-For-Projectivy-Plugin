@@ -62,7 +62,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu' # See 'Supported distributions' for available options
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - name: Increment Version Code and Name
@@ -130,4 +130,3 @@ jobs:
           releaseFiles: ${{ env.main_project_module }}/build/outputs/bundle/release/${{ env.main_project_module }}-release.aab
           track: production
           status: draft
-          changesNotSentForReview: true
