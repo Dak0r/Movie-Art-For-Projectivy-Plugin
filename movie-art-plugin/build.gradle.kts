@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import com.android.build.api.dsl.ApplicationExtension
 
 plugins {
     id("com.android.application")
@@ -7,7 +8,7 @@ plugins {
     kotlin("plugin.serialization") version "1.9.0" // Use the latest version of Kotlin
 }
 
-android {
+configure<ApplicationExtension> {
     namespace = "com.danielkorgel.projectivy.plugin.cinemaglow"
     compileSdk = 36
 
@@ -63,10 +64,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
