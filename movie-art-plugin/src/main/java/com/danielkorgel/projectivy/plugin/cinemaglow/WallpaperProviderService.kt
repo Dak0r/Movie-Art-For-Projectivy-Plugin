@@ -21,6 +21,7 @@ import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
 
+@Suppress("WrongConstant") // false positive linting issue for WallpaperType
 class WallpaperProviderService : Service() {
 
     val that = this
@@ -194,7 +195,7 @@ class WallpaperProviderService : Service() {
                 if (customBgFile.exists()) {
                     try {
                         val shareableUri = exposeFileToOtherApps(that, customBgFile).toString()
-                        val type =
+                        val type: @WallpaperType Int =
                             if (isVideoFile(fileName)) WallpaperType.VIDEO else WallpaperType.IMAGE
 
                         // Don't Resend wallpaper if it's a VIDEO that hasn't changed.
