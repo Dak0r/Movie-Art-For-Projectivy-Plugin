@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import com.danielkorgel.projectivy.plugin.cinemaglow.PreferencesManager
 import java.io.File
 import okhttp3.OkHttpClient
 import okhttp3.Request
