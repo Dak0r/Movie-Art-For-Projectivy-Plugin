@@ -39,7 +39,6 @@ fun cleanExpiredCache(context: Context, maxAgeDays: Int = 7) {
             cacheDir.listFiles()?.forEach { file ->
                 // Keep the core API cache file and custom background regardless of age
                 if (file.name == "tmdb_api_cache.json") return@forEach
-                if (file.name == PreferencesManager.customFallbackBackgroundName) return@forEach
 
                 if (file.isFile && file.lastModified() < threshold) {
                     println("FileCache: Deleting unused file from cache: ${file.name}")
