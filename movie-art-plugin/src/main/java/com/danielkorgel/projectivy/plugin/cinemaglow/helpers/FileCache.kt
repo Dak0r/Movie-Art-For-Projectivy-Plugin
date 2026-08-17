@@ -67,29 +67,6 @@ fun exposeFileToOtherApps(context: Context, cacheFile: File): Uri {
     return fileUri
 }
 
-fun downloadFile(context: Context, imageUrl: String, targetUri: Uri): Uri {
-    try {
-        val client = OkHttpClient()
-        val request = Request.Builder().url(imageUrl).build()
-
-        val response = client.newCall(request).execute()
-        if (!response.isSuccessful) throw Exception("Failed to download image: ${response.code}")
-
-        val inputStream = response.body.byteStream()
-
-        // Write the data directly to the target URI's output stream
-        context.contentResolver.openOutputStream(targetUri)?.use { outputStream ->
-            inputStream.copyTo(outputStream) // Stream the image directly
-        } ?: throw Exception("Failed to open output stream for URI: $targetUri")
-
-        inputStream.close()
-        return targetUri
-    } catch (e: Exception) {
-        e.printStackTrace()
-        throw e
-    }
-}
-
 fun downloadBitmap(imageUrl: String): Bitmap? {
     return try {
         val client = OkHttpClient()

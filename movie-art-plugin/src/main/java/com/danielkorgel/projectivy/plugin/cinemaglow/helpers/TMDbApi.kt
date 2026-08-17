@@ -84,7 +84,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
     data class SearchResultInfo(
         val id: Int,
         val mediaType: String,
-        val backdropUrl: String?
+        val backdropUrl: String?,
     )
 
     @Suppress("unused")
@@ -149,10 +149,5 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
     data class Logo(
         @SerializedName("file_path") val filePath: String?,
         @SerializedName("iso_639_1") val iso: String?
-    )
-
-    data class MovieArtUrls(
-        val backdropUrl: String?,
-        val logoUrl: String?
     )
 }

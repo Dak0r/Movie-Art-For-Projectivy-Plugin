@@ -47,13 +47,13 @@ class WallpaperProviderService : Service() {
         PreferencesManager.init(this)
         apiCache = ApiResponseCache(
             this,
-            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
+            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json")),
         )
         tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY, apiCache)
 
         val currentTime = System.currentTimeMillis()
         val oneDayInMillis = 24 * 60 * 60 * 1000L
-        if (currentTime - PreferencesManager.lastCacheClean > oneDayInMillis) {
+        if ((currentTime - PreferencesManager.lastCacheClean) > oneDayInMillis) {
             println("Cleaning Cache once in 24hrs")
             cleanExpiredCache(this)
             PreferencesManager.lastCacheClean = currentTime

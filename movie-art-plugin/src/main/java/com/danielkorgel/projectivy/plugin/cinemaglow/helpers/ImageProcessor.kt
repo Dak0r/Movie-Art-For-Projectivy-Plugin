@@ -1,9 +1,9 @@
 package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
-import android.content.Context
 import android.graphics.*
-import android.net.Uri
-import java.io.InputStream
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
+import androidx.core.graphics.scale
 
 object ImageProcessor {
     /**
@@ -12,12 +12,12 @@ object ImageProcessor {
     fun processMovieArt(
         backdrop: Bitmap,
         logo: Bitmap?,
-        addShadow: Boolean = true
+        addShadow: Boolean = true,
     ): Bitmap {
         val width = backdrop.width
         val height = backdrop.height
 
-        val resultBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val resultBitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(resultBitmap)
 
         // 1. Draw backdrop
@@ -67,11 +67,11 @@ object ImageProcessor {
             val maxLogoWidth = width * 0.15f
             val maxLogoHeight = height * 0.12f
             
-            val scale = Math.min(maxLogoWidth / l.width, maxLogoHeight / l.height)
+            val scale = minOf(maxLogoWidth / l.width, maxLogoHeight / l.height)
             val logoW = (l.width * scale).toInt()
             val logoH = (l.height * scale).toInt()
 
-            val scaledLogo = Bitmap.createScaledBitmap(l, logoW, logoH, true)
+            val scaledLogo = l.scale(logoW, logoH, true)
 
             // Placement: Top Left with 5% margin
             val marginX = width * 0.05f
@@ -81,7 +81,7 @@ object ImageProcessor {
             // This is much faster than BlurMaskFilter and provides a soft glow
             val centerX = marginX + (logoW / 2f)
             val centerY = marginY + (logoH / 2f)
-            val shadowRadius = Math.max(logoW, logoH) * 0.8f
+            val shadowRadius = maxOf(logoW.toFloat(), logoH.toFloat()) * 0.8f
 
             val blobPaint = Paint().apply {
                 isAntiAlias = true
@@ -104,18 +104,6 @@ object ImageProcessor {
         return resultBitmap
     }
 
-    fun decodeUriToBitmap(context: Context, uri: Uri): Bitmap? {
-        return try {
-            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-            bitmap
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     private fun isBottomPartBright(bitmap: Bitmap): Boolean {
         return try {
             val width = bitmap.width
@@ -127,18 +115,18 @@ object ImageProcessor {
             
             for (x in 0 until width step step) {
                 for (y in startY until height step step) {
-                    val color = bitmap.getPixel(x, y)
+                    val color = bitmap[x, y]
                     val r = Color.red(color)
                     val g = Color.green(color)
                     val b = Color.blue(color)
-                    totalLuminance += (0.299 * r + 0.587 * g + 0.114 * b)
+                    totalLuminance += (0.299 * r) + (0.587 * g) + (0.114 * b)
                     count++
                 }
             }
             
             if (count == 0) return true
             (totalLuminance / count) > 150 // Threshold for "bright"
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             true // Default to bright (stronger shadow) on error
         }
     }
