@@ -9,20 +9,19 @@ import java.util.Locale
 
 class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache?) {
 
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
     private val gson = Gson()
 
     // Base URL for TMDb API
     private val baseUrl = "https://api.themoviedb.org/3"
 
     /**
-     * Fetches a movie or TV show's background image URL based on the title with prioritized sorting.
-     *
-     * @param title The title of the movie or TV show.
-     * @return The URL of the background image or null if not found.
+     * Searches for a movie or TV show and returns its basic info (id, media type, backdrop URL).
      */
-    fun fetchBackgroundImageForTitle(title: String): String? {
-
+    fun searchArtInfo(title: String): SearchResultInfo? {
         val cleanName = cleanString(title)
         val language = Locale.getDefault().language
         val requestUrl = "$baseUrl/search/multi?api_key=$apiKey&page=1&language=$language&query=${java.net.URLEncoder.encode(cleanName, "UTF-8")}"
@@ -32,25 +31,61 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         apiCache?.let { cache ->
             if (cache.containsKey(cleanUrl)) {
                 response = cache.get(cleanUrl)
-                println("Found Cached Api Response for $title -> $response")
             }
         }
 
         if (response == null) {
             val searchResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
-            if (!searchResponse.isSuccessful) throw Exception("Failed to fetch search results: ${searchResponse.code}")
+            if (!searchResponse.isSuccessful) return null
             response = searchResponse.body.string()
             apiCache?.put(cleanUrl, response, 604800) // Cache for 7 days
         }
 
         val searchResult = gson.fromJson(response, SearchResult::class.java)
-
-        // Select the best match
         val bestMatch = searchResult.results.firstOrNull() ?: return null
 
-        // Fetch the backdrop image
-        return bestMatch.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
+        return SearchResultInfo(
+            id = bestMatch.id,
+            mediaType = bestMatch.mediaType ?: "movie",
+            backdropUrl = bestMatch.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
+        )
     }
+
+    /**
+     * Fetches the logo URL for a specific movie or TV show.
+     */
+    fun fetchLogoUrl(mediaType: String, id: Int): String? {
+        val language = Locale.getDefault().language
+        val requestUrl = "$baseUrl/$mediaType/$id/images?api_key=$apiKey&include_image_language=$language,en,null"
+
+        val cleanUrl = cleanString(requestUrl)
+        var response: String? = null
+        apiCache?.let { cache ->
+            if (cache.containsKey(cleanUrl)) {
+                response = cache.get(cleanUrl)
+            }
+        }
+
+        if (response == null) {
+            val imageResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
+            if (!imageResponse.isSuccessful) return null
+            response = imageResponse.body.string()
+            apiCache?.put(cleanUrl, response, 604800)
+        }
+
+        val imageResult = gson.fromJson(response, ImageResult::class.java)
+        val logo = imageResult.logos.firstOrNull { it.iso == language }
+            ?: imageResult.logos.firstOrNull { it.iso == "en" }
+            ?: imageResult.logos.firstOrNull()
+
+        return logo?.filePath?.let { "https://image.tmdb.org/t/p/original$it" }
+    }
+
+    data class SearchResultInfo(
+        val id: Int,
+        val mediaType: String,
+        val backdropUrl: String?
+    )
 
     @Suppress("unused")
     enum class TimeWindow(val value: String) {
@@ -58,35 +93,38 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         WEEK("week")
     }
     /**
-     * Fetches a movie or TV show's background image URL based on the title with prioritized sorting.
+     * Fetches popular movie/TV show info.
      *
      * @param timeWindow The time window for which to fetch popular titles.
-     * @return The URL of the background image or null if not found.
+     * @return A list of SearchResultInfo objects.
      */
-    fun fetchBackgroundImagesForPopularTitles(timeWindow: TimeWindow): List<String> {
-        // https://api.themoviedb.org/3/trending/all/day
+    fun fetchPopularTitlesInfo(timeWindow: TimeWindow): List<SearchResultInfo> {
         val language = Locale.getDefault().language
         val timeWindowParam = timeWindow.value
-        val requestUrl = "$baseUrl/trending/all/$timeWindowParam?api_key=$apiKey&page=1&language=$language}"
+        val requestUrl = "$baseUrl/trending/all/$timeWindowParam?api_key=$apiKey&page=1&language=$language"
 
         val cleanUrl = cleanString(requestUrl)
         var response: String? = null
         apiCache?.let { cache ->
             if (cache.containsKey(cleanUrl)) {
                 response = cache.get(cleanUrl)
-                println("Found Cached Api Response for Trending titles -> $response")
             }
         }
         if (response == null) {
             val apiResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
-            if (!apiResponse.isSuccessful) throw Exception("Failed to fetch search results: ${apiResponse.code}")
+            if (!apiResponse.isSuccessful) return emptyList()
             response = apiResponse.body.string()
             apiCache?.put(cleanUrl, response)
         }
         val parsedResponse = gson.fromJson(response, SearchResult::class.java)
 
-        return parsedResponse.results
-            .mapNotNull { it.backdropPath }.map { "https://image.tmdb.org/t/p/original$it" }
+        return parsedResponse.results.map { result ->
+            SearchResultInfo(
+                id = result.id,
+                mediaType = result.mediaType ?: "movie",
+                backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
+            )
+        }
     }
 
     // Data classes for parsing TMDb API response
@@ -95,11 +133,26 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
     )
 
     data class Result(
+        @SerializedName("id") val id: Int,
         @SerializedName("backdrop_path") val backdropPath: String?,
         @SerializedName("title") val title: String?,
         @SerializedName("name") val name: String?,
         @SerializedName("media_type") val mediaType: String?, // e.g., "movie" or "tv"
         @SerializedName("popularity") val popularity: Double?,
         @SerializedName("release_date") val releaseDate: String? // Format: YYYY-MM-DD
+    )
+
+    data class ImageResult(
+        @SerializedName("logos") val logos: List<Logo>
+    )
+
+    data class Logo(
+        @SerializedName("file_path") val filePath: String?,
+        @SerializedName("iso_639_1") val iso: String?
+    )
+
+    data class MovieArtUrls(
+        val backdropUrl: String?,
+        val logoUrl: String?
     )
 }
