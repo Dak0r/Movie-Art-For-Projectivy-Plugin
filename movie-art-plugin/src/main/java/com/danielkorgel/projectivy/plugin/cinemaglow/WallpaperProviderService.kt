@@ -10,16 +10,19 @@ import android.os.PowerManager
 import android.webkit.MimeTypeMap
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImageProcessor
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.cleanExpiredCache
-import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadFile
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadBitmap
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.exposeFileToOtherApps
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.getCacheFile
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.saveBitmapToFile
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
+import java.util.concurrent.CompletableFuture
 
 @Suppress("WrongConstant") // false positive linting issue for WallpaperType
 class WallpaperProviderService : Service() {
@@ -44,13 +47,13 @@ class WallpaperProviderService : Service() {
         PreferencesManager.init(this)
         apiCache = ApiResponseCache(
             this,
-            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json"))
+            Uri.fromFile(getCacheFile(this, "tmdb_api_cache.json")),
         )
         tmdbApi = TMDbApi(BuildConfig.TMDB_API_KEY, apiCache)
 
         val currentTime = System.currentTimeMillis()
         val oneDayInMillis = 24 * 60 * 60 * 1000L
-        if (currentTime - PreferencesManager.lastCacheClean > oneDayInMillis) {
+        if ((currentTime - PreferencesManager.lastCacheClean) > oneDayInMillis) {
             println("Cleaning Cache once in 24hrs")
             cleanExpiredCache(this)
             PreferencesManager.lastCacheClean = currentTime
@@ -104,23 +107,37 @@ class WallpaperProviderService : Service() {
 
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
+                    val api = tmdbApi
                     event.title?.let { title ->
-                        val backgroundImageUrl = tmdbApi?.fetchBackgroundImageForTitle(title)
+                        val info = api?.searchArtInfo(title)
                         var file: java.io.File? = null
-                        if (backgroundImageUrl != null) {
-                            val filename = backgroundImageUrl.substringAfterLast("/")
-                            file = getCacheFile(that,"backdrop_${filename}")
+                        if (info?.backdropUrl != null) {
+                            val filename = info.backdropUrl.substringAfterLast("/")
+                            file = getCacheFile(that, "processed_v4_$filename")
+                            
                             if (!fileUriExists(that, Uri.fromFile(file))) {
                                 try {
+                                    val logoUrl = api.fetchLogoUrl(info.mediaType, info.id)
+                                    
+                                    val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(info.backdropUrl) }
+                                    val logoFuture = logoUrl?.let { url -> 
+                                        CompletableFuture.supplyAsync { downloadBitmap(url) }
+                                    }
 
-                                    println("TMDB Background image URL: $backgroundImageUrl")
-                                    downloadFile(
-                                        that,
-                                        backgroundImageUrl,
-                                        Uri.fromFile(file)
-                                    )
-                                    println("Download done: ${file.path}")
+                                    val backdropBitmap = backdropFuture.get()
+                                    val logoBitmap = logoFuture?.get()
 
+                                    if (backdropBitmap != null) {
+                                        val processedBitmap = ImageProcessor.processMovieArt(
+                                            backdropBitmap,
+                                            logoBitmap,
+                                            addShadow = true
+                                        )
+                                        saveBitmapToFile(processedBitmap, file)
+                                        backdropBitmap.recycle()
+                                        logoBitmap?.recycle()
+                                        processedBitmap.recycle()
+                                    }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                 }
@@ -225,28 +242,44 @@ class WallpaperProviderService : Service() {
 
             if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
                 try {
-                    var backgroundImageUrl:String? = null
+                    val api = tmdbApi
+                    var info: TMDbApi.SearchResultInfo? = null
                     var maxTries = 5
+                    val popularInfo = api?.fetchPopularTitlesInfo(TMDbApi.TimeWindow.DAY)
                     do {
-                        backgroundImageUrl = tmdbApi?.fetchBackgroundImagesForPopularTitles(TMDbApi.TimeWindow.DAY)
-                            ?.random()
+                        info = popularInfo?.random()
                         maxTries--
-                    }while((backgroundImageUrl == null || backgroundImageUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
-                    if (backgroundImageUrl != null) {
-                        updateLastWallpaperSent(backgroundImageUrl)
-                        println("TMDB Background image URL: $backgroundImageUrl")
-                        val filename = backgroundImageUrl.substringAfterLast("/")
-                        val file = getCacheFile(that,"backdrop_${filename}")
-                        if(!fileUriExists(that, Uri.fromFile(file))) {
-                            downloadFile(
-                                that,
-                                backgroundImageUrl,
-                                Uri.fromFile(file)
-                            )
-                            println("Download done: ${file.path}")
+                    } while ((info == null || info.backdropUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
+
+                    if (info?.backdropUrl != null) {
+                        val filename = info.backdropUrl.substringAfterLast("/")
+                        val file = getCacheFile(that, "processed_v4_$filename")
+                        if (!fileUriExists(that, Uri.fromFile(file))) {
+                            val logoUrl = api?.fetchLogoUrl(info.mediaType, info.id)
+                            
+                            val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(info.backdropUrl) }
+                            val logoFuture = logoUrl?.let { url ->
+                                CompletableFuture.supplyAsync { downloadBitmap(url) }
+                            }
+
+                            val backdropBitmap = backdropFuture.get()
+                            val logoBitmap = logoFuture?.get()
+
+                            if (backdropBitmap != null) {
+                                val processedBitmap = ImageProcessor.processMovieArt(
+                                    backdropBitmap,
+                                    logoBitmap,
+                                    addShadow = true
+                                )
+                                saveBitmapToFile(processedBitmap, file)
+                                backdropBitmap.recycle()
+                                logoBitmap?.recycle()
+                                processedBitmap.recycle()
+                            }
                         }
                         if (fileUriExists(that, Uri.fromFile(file))) {
                             val shareableUri = exposeFileToOtherApps(that, file).toString()
+                            updateLastWallpaperSent(shareableUri)
                             return listOf(
                                 Wallpaper(
                                     shareableUri,

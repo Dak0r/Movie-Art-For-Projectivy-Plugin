@@ -2,10 +2,13 @@ package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.danielkorgel.projectivy.plugin.cinemaglow.PreferencesManager
 import java.io.File
+import java.io.FileOutputStream
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
@@ -64,25 +67,30 @@ fun exposeFileToOtherApps(context: Context, cacheFile: File): Uri {
     return fileUri
 }
 
-fun downloadFile(context: Context, imageUrl: String, targetUri: Uri): Uri {
-    try {
+fun downloadBitmap(imageUrl: String): Bitmap? {
+    return try {
         val client = OkHttpClient()
         val request = Request.Builder().url(imageUrl).build()
-
         val response = client.newCall(request).execute()
-        if (!response.isSuccessful) throw Exception("Failed to download image: ${response.code}")
-
+        if (!response.isSuccessful) return null
         val inputStream = response.body.byteStream()
-
-        // Write the data directly to the target URI's output stream
-        context.contentResolver.openOutputStream(targetUri)?.use { outputStream ->
-            inputStream.copyTo(outputStream) // Stream the image directly
-        } ?: throw Exception("Failed to open output stream for URI: $targetUri")
-
+        val bitmap = BitmapFactory.decodeStream(inputStream)
         inputStream.close()
-        return targetUri
+        bitmap
     } catch (e: Exception) {
         e.printStackTrace()
-        throw e
+        null
+    }
+}
+
+fun saveBitmapToFile(bitmap: Bitmap, file: File): Boolean {
+    return try {
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+        }
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
     }
 }
