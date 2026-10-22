@@ -2,6 +2,7 @@ package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StreamingServicesTest {
@@ -21,14 +22,15 @@ class StreamingServicesTest {
 
     @Test
     fun providerIdsAreNumbersJoinedWithPipes() {
-        val packages = listOf(
-            "com.netflix.ninja", "com.amazon.amazonvideo.livingroom", "com.disney.disneyplus",
-            "com.hulu.livingroomplus", "com.wbd.stream", "com.apple.atve.androidtv.appletv",
-            "com.peacocktv.peacockandroid", "com.cbs.ott", "com.crunchyroll.crunchyroid", "com.tubitv",
-        )
-        packages.forEach { pkg ->
-            val ids = StreamingServices.providerIdsFor(pkg)
-            assert(ids != null && Regex("""\d+(\|\d+)*""").matches(ids)) { "$pkg -> $ids" }
+        StreamingServices.providersByPackage.forEach { (pkg, ids) ->
+            assertTrue("$pkg -> $ids", Regex("""\d+(\|\d+)*""").matches(ids))
+        }
+    }
+
+    @Test
+    fun packageNamesLookLikePackageNames() {
+        StreamingServices.providersByPackage.keys.forEach { pkg ->
+            assertTrue(pkg, Regex("""[a-z][a-z0-9_]*(\.[a-z0-9_]+)+""").matches(pkg))
         }
     }
 }
