@@ -8,6 +8,12 @@ class AppServiceRotation(private val size: Int = 10) {
 
     private val positions = mutableMapOf<String, Int>()
 
+    /** The app card focused last, or null once a program card has been focused. */
+    var focusedApp: String? = null
+
+    /** The app the wallpaper timer should move on to its next title, if any. */
+    fun appToRotateOnTimer(rotationEnabled: Boolean): String? = if (rotationEnabled) focusedApp else null
+
     /** The next of the first [size] titles for this app (wrapping around), or null if there are none. */
     fun <T> next(packageName: String, titles: List<T>): T? {
         val top = titles.take(size)

@@ -106,11 +106,28 @@ class WallpaperProviderService : Service() {
             return when (event) {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
+                    appServiceRotation.focusedApp = event.packageName
                     fallbackWallpaper(event)
+                }
+
+                // Every few minutes (Projectivy's wallpaper update frequency): with "Popular on the App's
+                // Service", move a still-focused streaming app on to its next title. Otherwise nothing
+                // changes, since an empty list keeps the current wallpaper.
+                is Event.TimeElapsed -> {
+                    val app = appServiceRotation.appToRotateOnTimer(
+                        PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularOnAppService
+                    )
+                    try {
+                        app?.let { appServiceWallpaper(it) } ?: emptyList()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        emptyList()
+                    }
                 }
 
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
+                    appServiceRotation.focusedApp = null
                     event.title?.let { title ->
                         tmdbApi?.searchArtInfo(title)?.let { info ->
                             compositedWallpaper(info)?.let { return it }

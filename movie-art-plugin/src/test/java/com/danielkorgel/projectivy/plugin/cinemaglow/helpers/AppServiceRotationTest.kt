@@ -51,6 +51,29 @@ class AppServiceRotationTest {
     }
 
     @Test
+    fun timerRotatesTheFocusedAppWhenEnabled() {
+        val rotation = AppServiceRotation()
+        rotation.focusedApp = "com.hulu.livingroomplus"
+        assertEquals("com.hulu.livingroomplus", rotation.appToRotateOnTimer(rotationEnabled = true))
+    }
+
+    @Test
+    fun timerDoesNothingForOtherFallbacks() {
+        val rotation = AppServiceRotation()
+        rotation.focusedApp = "com.hulu.livingroomplus"
+        assertNull(rotation.appToRotateOnTimer(rotationEnabled = false))
+    }
+
+    @Test
+    fun timerDoesNothingAfterAProgramCardOrBeforeAnyFocus() {
+        val rotation = AppServiceRotation()
+        assertNull(rotation.appToRotateOnTimer(rotationEnabled = true))
+        rotation.focusedApp = "com.hulu.livingroomplus"
+        rotation.focusedApp = null
+        assertNull(rotation.appToRotateOnTimer(rotationEnabled = true))
+    }
+
+    @Test
     fun noTitlesGivesNull() {
         assertNull(AppServiceRotation().next("netflix", emptyList<String>()))
     }

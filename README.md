@@ -9,7 +9,7 @@ Note: The project was initially published as `Cinema Glow` hence the bundle iden
 The plugin is based on the [Projectivy plugin template](https://github.com/spocky/projectivy-plugin-wallpaper-provider).
 
 ## Fallback Background
-For cards that are not a movie or show, the plugin can show *Popular Movies and Shows* (trending on TMDb), *Popular on the App's Service* (for a known streaming app, its most popular titles in that service's catalog, one after another on each visit; other apps get the trending titles), *Dynamic Colors* or a *Custom Background*. The streaming app to TMDb provider mapping is in `helpers/StreamingServices.kt` and was checked against TMDb's US provider list; the region comes from the device locale.
+For cards that are not a movie or show, the plugin can show *Popular Movies and Shows* (trending on TMDb), *Popular on the App's Service* (for a known streaming app, its most popular titles in that service's catalog, one after another on each visit and, while the app stays focused, at each wallpaper update; other apps get the trending titles), *Dynamic Colors* or a *Custom Background*. The streaming app to TMDb provider mapping is in `helpers/StreamingServices.kt` and was checked against TMDb's US provider list; the region comes from the device locale.
 
 ## Contributions
 Contributions are welcome, please fork this repo and create a pull request with your changes.
