@@ -107,53 +107,9 @@ class WallpaperProviderService : Service() {
 
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
-                    val api = tmdbApi
                     event.title?.let { title ->
-                        val info = api?.searchArtInfo(title)
-                        var file: java.io.File? = null
-                        if (info?.backdropUrl != null) {
-                            val filename = info.backdropUrl.substringAfterLast("/")
-                            file = getCacheFile(that, "processed_v4_$filename")
-                            
-                            if (!fileUriExists(that, Uri.fromFile(file))) {
-                                try {
-                                    val logoUrl = api.fetchLogoUrl(info.mediaType, info.id)
-                                    
-                                    val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(info.backdropUrl) }
-                                    val logoFuture = logoUrl?.let { url -> 
-                                        CompletableFuture.supplyAsync { downloadBitmap(url) }
-                                    }
-
-                                    val backdropBitmap = backdropFuture.get()
-                                    val logoBitmap = logoFuture?.get()
-
-                                    if (backdropBitmap != null) {
-                                        val processedBitmap = ImageProcessor.processMovieArt(
-                                            backdropBitmap,
-                                            logoBitmap,
-                                            addShadow = true
-                                        )
-                                        saveBitmapToFile(processedBitmap, file)
-                                        backdropBitmap.recycle()
-                                        logoBitmap?.recycle()
-                                        processedBitmap.recycle()
-                                    }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                            }
-                        }
-
-                        if (file != null && fileUriExists(that, Uri.fromFile(file))) {
-                            val shareableUri = exposeFileToOtherApps(that, file).toString()
-                            updateLastWallpaperSent(shareableUri)
-                            return listOf(
-                                Wallpaper(
-                                    shareableUri,
-                                    WallpaperType.IMAGE,
-                                    author = "themoviedb.org"
-                                )
-                            )
+                        tmdbApi?.searchArtInfo(title)?.let { info ->
+                            compositedWallpaper(info)?.let { return it }
                         }
                     }
 
@@ -198,6 +154,54 @@ class WallpaperProviderService : Service() {
             val extension = MimeTypeMap.getFileExtensionFromUrl(fileName)
             val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
             return mimeType?.startsWith("video/") == true
+        }
+
+        /**
+         * The title's backdrop composited with its logo (cached), or null if the backdrop can't be loaded.
+         */
+        private fun compositedWallpaper(info: TMDbApi.SearchResultInfo): List<Wallpaper>? {
+            val backdropUrl = info.backdropUrl ?: return null
+            val filename = backdropUrl.substringAfterLast("/")
+            val file = getCacheFile(that, "processed_v4_$filename")
+
+            if (!fileUriExists(that, Uri.fromFile(file))) {
+                try {
+                    val logoUrl = tmdbApi?.fetchLogoUrl(info.mediaType, info.id)
+
+                    val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(backdropUrl) }
+                    val logoFuture = logoUrl?.let { url ->
+                        CompletableFuture.supplyAsync { downloadBitmap(url) }
+                    }
+
+                    val backdropBitmap = backdropFuture.get()
+                    val logoBitmap = logoFuture?.get()
+
+                    if (backdropBitmap != null) {
+                        val processedBitmap = ImageProcessor.processMovieArt(
+                            backdropBitmap,
+                            logoBitmap,
+                            addShadow = true
+                        )
+                        saveBitmapToFile(processedBitmap, file)
+                        backdropBitmap.recycle()
+                        logoBitmap?.recycle()
+                        processedBitmap.recycle()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            if (!fileUriExists(that, Uri.fromFile(file))) return null
+            val shareableUri = exposeFileToOtherApps(that, file).toString()
+            updateLastWallpaperSent(shareableUri)
+            return listOf(
+                Wallpaper(
+                    shareableUri,
+                    WallpaperType.IMAGE,
+                    author = "themoviedb.org"
+                )
+            )
         }
 
         private fun fallbackWallpaper(
@@ -251,43 +255,8 @@ class WallpaperProviderService : Service() {
                         maxTries--
                     } while ((info == null || info.backdropUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
 
-                    if (info?.backdropUrl != null) {
-                        val filename = info.backdropUrl.substringAfterLast("/")
-                        val file = getCacheFile(that, "processed_v4_$filename")
-                        if (!fileUriExists(that, Uri.fromFile(file))) {
-                            val logoUrl = api?.fetchLogoUrl(info.mediaType, info.id)
-                            
-                            val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(info.backdropUrl) }
-                            val logoFuture = logoUrl?.let { url ->
-                                CompletableFuture.supplyAsync { downloadBitmap(url) }
-                            }
-
-                            val backdropBitmap = backdropFuture.get()
-                            val logoBitmap = logoFuture?.get()
-
-                            if (backdropBitmap != null) {
-                                val processedBitmap = ImageProcessor.processMovieArt(
-                                    backdropBitmap,
-                                    logoBitmap,
-                                    addShadow = true
-                                )
-                                saveBitmapToFile(processedBitmap, file)
-                                backdropBitmap.recycle()
-                                logoBitmap?.recycle()
-                                processedBitmap.recycle()
-                            }
-                        }
-                        if (fileUriExists(that, Uri.fromFile(file))) {
-                            val shareableUri = exposeFileToOtherApps(that, file).toString()
-                            updateLastWallpaperSent(shareableUri)
-                            return listOf(
-                                Wallpaper(
-                                    shareableUri,
-                                    WallpaperType.IMAGE,
-                                    author = "themoviedb.org"
-                                )
-                            )
-                        }
+                    if (info != null) {
+                        compositedWallpaper(info)?.let { return it }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
