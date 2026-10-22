@@ -9,9 +9,11 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.webkit.MimeTypeMap
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.AppServiceRotation
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImageProcessor
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.StreamingServices
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.cleanExpiredCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadBitmap
@@ -22,6 +24,7 @@ import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 @Suppress("WrongConstant") // false positive linting issue for WallpaperType
@@ -30,6 +33,7 @@ class WallpaperProviderService : Service() {
     val that = this
     var apiCache: ApiResponseCache? = null
     var tmdbApi: TMDbApi? = null
+    val appServiceRotation = AppServiceRotation()
 
 
 
@@ -204,6 +208,20 @@ class WallpaperProviderService : Service() {
             )
         }
 
+        /**
+         * The next of the titles most popular on the app's streaming service, or null if the app
+         * isn't a known service.
+         */
+        private fun appServiceWallpaper(packageName: String?): List<Wallpaper>? {
+            if (packageName == null) return null
+            val providerIds = StreamingServices.providerIdsFor(packageName) ?: return null
+            val region = Locale.getDefault().country.ifEmpty { "US" }
+            val titles = tmdbApi?.fetchPopularOnProvidersInfo(providerIds, region)
+                ?.filter { it.backdropUrl != null } ?: return null
+            val info = appServiceRotation.next(packageName, titles) ?: return null
+            return compositedWallpaper(info)
+        }
+
         private fun fallbackWallpaper(
             event: Event
         ): List<Wallpaper> {
@@ -244,7 +262,18 @@ class WallpaperProviderService : Service() {
                 }
             }
 
-            if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+            val fallback = PreferencesManager.fallbackBackground
+            if (fallback == PreferencesManager.FallbackBackground.PopularOnAppService && event is Event.CardFocused) {
+                try {
+                    appServiceWallpaper(event.packageName)?.let { return it }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // Apps that aren't a known streaming service get the overall popular titles too
+            if (fallback == PreferencesManager.FallbackBackground.PopularMoviesAndShows
+                || fallback == PreferencesManager.FallbackBackground.PopularOnAppService) {
                 try {
                     val api = tmdbApi
                     var info: TMDbApi.SearchResultInfo? = null

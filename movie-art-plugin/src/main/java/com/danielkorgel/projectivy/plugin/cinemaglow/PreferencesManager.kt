@@ -13,6 +13,7 @@ object PreferencesManager {
 
     enum class FallbackBackground(val text: String) {
         PopularMoviesAndShows("Popular Movies and Shows"),
+        PopularOnAppService("Popular on the App's Service"),
         DynamicColors("Dynamic Colors"),
         CustomBackground("Custom Background");
     }
