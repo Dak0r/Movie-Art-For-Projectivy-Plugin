@@ -42,10 +42,16 @@ configure<ApplicationExtension> {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../cinemaglow.jks")
-            storePassword = "cY2tMwY4M0W8GF839MD7"
-            keyAlias = "cinemaglow"
-            keyPassword = "cY2tMwY4M0W8GF839MD7"
+            val keystoreFile = file("../cinemaglow.jks")
+            val password = System.getenv("JKS_PASSWORD")
+            val alias = System.getenv("JKS_KEY_ALIAS")
+            val keyPass = System.getenv("JKS_KEY_PASSWORD")
+            if (keystoreFile.exists() && !password.isNullOrEmpty() && !alias.isNullOrEmpty() && !keyPass.isNullOrEmpty()) {
+                storeFile = keystoreFile
+                storePassword = password
+                keyAlias = alias
+                keyPassword = keyPass
+            }
         }
     }
 
@@ -53,7 +59,10 @@ configure<ApplicationExtension> {
         release {
             isMinifyEnabled = true
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile?.exists() == true && !releaseConfig.storePassword.isNullOrEmpty()) {
+                signingConfig = releaseConfig
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
