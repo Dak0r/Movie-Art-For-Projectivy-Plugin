@@ -45,6 +45,7 @@ jobs:
         run: echo "repository_name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
 
       - name: Decode Keystore
+        if: github.event_name != 'pull_request'
         env:
           ENCODED_STRING: ${{ secrets.JKS_STORE }}
         run: |
