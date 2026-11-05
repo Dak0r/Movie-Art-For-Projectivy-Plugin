@@ -71,10 +71,6 @@ class SettingsFragment : GuidedStepSupportFragment() {
             ACTION_ID_FALLBACK_BG_TOGGLE -> {
                 val newState: PreferencesManager.FallbackBackground = when (PreferencesManager.fallbackBackground) {
                     PreferencesManager.FallbackBackground.PopularMoviesAndShows -> {
-                        PreferencesManager.FallbackBackground.PopularOnAppService
-                    }
-
-                    PreferencesManager.FallbackBackground.PopularOnAppService -> {
                         PreferencesManager.FallbackBackground.DynamicColors
                     }
 

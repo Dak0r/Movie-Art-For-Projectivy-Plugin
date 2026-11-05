@@ -110,12 +110,12 @@ class WallpaperProviderService : Service() {
                     fallbackWallpaper(event)
                 }
 
-                // Every few minutes (Projectivy's wallpaper update frequency): with "Popular on the App's
-                // Service", move a still-focused streaming app on to its next title. Otherwise nothing
+                // Every few minutes (Projectivy's wallpaper update frequency): with "Popular Movies and
+                // Shows", move a still-focused streaming app on to its next title. Otherwise nothing
                 // changes, since an empty list keeps the current wallpaper.
                 is Event.TimeElapsed -> {
                     val app = appServiceRotation.appToRotateOnTimer(
-                        PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularOnAppService
+                        PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows
                     )
                     try {
                         app?.let { appServiceWallpaper(it) } ?: emptyList()
@@ -279,18 +279,17 @@ class WallpaperProviderService : Service() {
                 }
             }
 
-            val fallback = PreferencesManager.fallbackBackground
-            if (fallback == PreferencesManager.FallbackBackground.PopularOnAppService && event is Event.CardFocused) {
-                try {
-                    appServiceWallpaper(event.packageName)?.let { return it }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+            if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+                // A known streaming app shows what's popular on its own service
+                if (event is Event.CardFocused) {
+                    try {
+                        appServiceWallpaper(event.packageName)?.let { return it }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
-            }
 
-            // Apps that aren't a known streaming service get the overall popular titles too
-            if (fallback == PreferencesManager.FallbackBackground.PopularMoviesAndShows
-                || fallback == PreferencesManager.FallbackBackground.PopularOnAppService) {
+                // Any other app gets the overall popular titles
                 try {
                     val api = tmdbApi
                     var info: TMDbApi.SearchResultInfo? = null
