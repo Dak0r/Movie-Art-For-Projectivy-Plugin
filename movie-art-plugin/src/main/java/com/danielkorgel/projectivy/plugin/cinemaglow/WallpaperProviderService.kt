@@ -9,9 +9,11 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.webkit.MimeTypeMap
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ApiResponseCache
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.AppServiceRotation
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.ImageProcessor
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.LottieEditorRegex
+import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.StreamingServices
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.TMDbApi
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.cleanExpiredCache
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.downloadBitmap
@@ -22,6 +24,7 @@ import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperType
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 @Suppress("WrongConstant") // false positive linting issue for WallpaperType
@@ -30,6 +33,7 @@ class WallpaperProviderService : Service() {
     val that = this
     var apiCache: ApiResponseCache? = null
     var tmdbApi: TMDbApi? = null
+    val appServiceRotation = AppServiceRotation()
 
 
 
@@ -102,58 +106,31 @@ class WallpaperProviderService : Service() {
             return when (event) {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
+                    appServiceRotation.focusedApp = event.packageName
                     fallbackWallpaper(event)
+                }
+
+                // Every few minutes (Projectivy's wallpaper update frequency): with "Popular Movies and
+                // Shows", move a still-focused streaming app on to its next title. Otherwise nothing
+                // changes, since an empty list keeps the current wallpaper.
+                is Event.TimeElapsed -> {
+                    val app = appServiceRotation.appToRotateOnTimer(
+                        PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows
+                    )
+                    try {
+                        app?.let { appServiceWallpaper(it) } ?: emptyList()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        emptyList()
+                    }
                 }
 
                 // When the focused "program" card changes
                 is Event.ProgramCardFocused -> {
-                    val api = tmdbApi
+                    appServiceRotation.focusedApp = null
                     event.title?.let { title ->
-                        val info = api?.searchArtInfo(title)
-                        var file: java.io.File? = null
-                        if (info?.backdropUrl != null) {
-                            val filename = info.backdropUrl.substringAfterLast("/")
-                            file = getCacheFile(that, "processed_v4_$filename")
-                            
-                            if (!fileUriExists(that, Uri.fromFile(file))) {
-                                try {
-                                    val logoUrl = api.fetchLogoUrl(info.mediaType, info.id)
-                                    
-                                    val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(info.backdropUrl) }
-                                    val logoFuture = logoUrl?.let { url -> 
-                                        CompletableFuture.supplyAsync { downloadBitmap(url) }
-                                    }
-
-                                    val backdropBitmap = backdropFuture.get()
-                                    val logoBitmap = logoFuture?.get()
-
-                                    if (backdropBitmap != null) {
-                                        val processedBitmap = ImageProcessor.processMovieArt(
-                                            backdropBitmap,
-                                            logoBitmap,
-                                            addShadow = true
-                                        )
-                                        saveBitmapToFile(processedBitmap, file)
-                                        backdropBitmap.recycle()
-                                        logoBitmap?.recycle()
-                                        processedBitmap.recycle()
-                                    }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
-                            }
-                        }
-
-                        if (file != null && fileUriExists(that, Uri.fromFile(file))) {
-                            val shareableUri = exposeFileToOtherApps(that, file).toString()
-                            updateLastWallpaperSent(shareableUri)
-                            return listOf(
-                                Wallpaper(
-                                    shareableUri,
-                                    WallpaperType.IMAGE,
-                                    author = "themoviedb.org"
-                                )
-                            )
+                        tmdbApi?.searchArtInfo(title)?.let { info ->
+                            compositedWallpaper(info)?.let { return it }
                         }
                     }
 
@@ -200,6 +177,68 @@ class WallpaperProviderService : Service() {
             return mimeType?.startsWith("video/") == true
         }
 
+        /**
+         * The title's backdrop composited with its logo (cached), or null if the backdrop can't be loaded.
+         */
+        private fun compositedWallpaper(info: TMDbApi.SearchResultInfo): List<Wallpaper>? {
+            val backdropUrl = info.backdropUrl ?: return null
+            val filename = backdropUrl.substringAfterLast("/")
+            val file = getCacheFile(that, "processed_v4_$filename")
+
+            if (!fileUriExists(that, Uri.fromFile(file))) {
+                try {
+                    val logoUrl = tmdbApi?.fetchLogoUrl(info.mediaType, info.id)
+
+                    val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(backdropUrl) }
+                    val logoFuture = logoUrl?.let { url ->
+                        CompletableFuture.supplyAsync { downloadBitmap(url) }
+                    }
+
+                    val backdropBitmap = backdropFuture.get()
+                    val logoBitmap = logoFuture?.get()
+
+                    if (backdropBitmap != null) {
+                        val processedBitmap = ImageProcessor.processMovieArt(
+                            backdropBitmap,
+                            logoBitmap,
+                            addShadow = true
+                        )
+                        saveBitmapToFile(processedBitmap, file)
+                        backdropBitmap.recycle()
+                        logoBitmap?.recycle()
+                        processedBitmap.recycle()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            if (!fileUriExists(that, Uri.fromFile(file))) return null
+            val shareableUri = exposeFileToOtherApps(that, file).toString()
+            updateLastWallpaperSent(shareableUri)
+            return listOf(
+                Wallpaper(
+                    shareableUri,
+                    WallpaperType.IMAGE,
+                    author = "themoviedb.org"
+                )
+            )
+        }
+
+        /**
+         * The next of the titles most popular on the app's streaming service, or null if the app
+         * isn't a known service.
+         */
+        private fun appServiceWallpaper(packageName: String?): List<Wallpaper>? {
+            if (packageName == null) return null
+            val providerIds = StreamingServices.providerIdsFor(packageName) ?: return null
+            val region = Locale.getDefault().country.ifEmpty { "US" }
+            val titles = tmdbApi?.fetchPopularOnProvidersInfo(providerIds, region)
+                ?.filter { it.backdropUrl != null } ?: return null
+            val info = appServiceRotation.next(packageName, titles) ?: return null
+            return compositedWallpaper(info)
+        }
+
         private fun fallbackWallpaper(
             event: Event
         ): List<Wallpaper> {
@@ -241,6 +280,16 @@ class WallpaperProviderService : Service() {
             }
 
             if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+                // A known streaming app shows what's popular on its own service
+                if (event is Event.CardFocused) {
+                    try {
+                        appServiceWallpaper(event.packageName)?.let { return it }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                // Any other app gets the overall popular titles
                 try {
                     val api = tmdbApi
                     var info: TMDbApi.SearchResultInfo? = null
@@ -251,43 +300,8 @@ class WallpaperProviderService : Service() {
                         maxTries--
                     } while ((info == null || info.backdropUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
 
-                    if (info?.backdropUrl != null) {
-                        val filename = info.backdropUrl.substringAfterLast("/")
-                        val file = getCacheFile(that, "processed_v4_$filename")
-                        if (!fileUriExists(that, Uri.fromFile(file))) {
-                            val logoUrl = api?.fetchLogoUrl(info.mediaType, info.id)
-                            
-                            val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(info.backdropUrl) }
-                            val logoFuture = logoUrl?.let { url ->
-                                CompletableFuture.supplyAsync { downloadBitmap(url) }
-                            }
-
-                            val backdropBitmap = backdropFuture.get()
-                            val logoBitmap = logoFuture?.get()
-
-                            if (backdropBitmap != null) {
-                                val processedBitmap = ImageProcessor.processMovieArt(
-                                    backdropBitmap,
-                                    logoBitmap,
-                                    addShadow = true
-                                )
-                                saveBitmapToFile(processedBitmap, file)
-                                backdropBitmap.recycle()
-                                logoBitmap?.recycle()
-                                processedBitmap.recycle()
-                            }
-                        }
-                        if (fileUriExists(that, Uri.fromFile(file))) {
-                            val shareableUri = exposeFileToOtherApps(that, file).toString()
-                            updateLastWallpaperSent(shareableUri)
-                            return listOf(
-                                Wallpaper(
-                                    shareableUri,
-                                    WallpaperType.IMAGE,
-                                    author = "themoviedb.org"
-                                )
-                            )
-                        }
+                    if (info != null) {
+                        compositedWallpaper(info)?.let { return it }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()

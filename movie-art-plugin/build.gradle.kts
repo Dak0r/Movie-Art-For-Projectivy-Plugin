@@ -92,4 +92,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.3.2") // For HTTP requests
     implementation("com.google.code.gson:gson:2.13.2") // JSON Parsing
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+
+    testImplementation("junit:junit:4.13.2")
 }

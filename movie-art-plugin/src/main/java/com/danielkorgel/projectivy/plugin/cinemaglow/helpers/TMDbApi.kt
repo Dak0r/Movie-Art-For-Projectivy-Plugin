@@ -127,6 +127,53 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
     }
 
+    /**
+     * Fetches the most popular movies and TV shows available on the given watch providers.
+     *
+     * @param providerIds TMDb watch provider ids, several joined with "|" (OR).
+     * @param region ISO 3166-1 country code the availability applies to.
+     * @return Movies and shows alternating, each list most popular first.
+     */
+    fun fetchPopularOnProvidersInfo(providerIds: String, region: String): List<SearchResultInfo> {
+        val language = Locale.getDefault().language
+        val (movies, shows) = listOf("movie", "tv").map { mediaType ->
+            val requestUrl = "$baseUrl/discover/$mediaType?api_key=$apiKey&page=1&language=$language" +
+                "&sort_by=popularity.desc&watch_region=$region&with_watch_providers=$providerIds"
+
+            val cleanUrl = cleanString(requestUrl)
+            var response: String? = null
+            apiCache?.let { cache ->
+                if (cache.containsKey(cleanUrl)) {
+                    response = cache.get(cleanUrl)
+                }
+            }
+            if (response == null) {
+                val apiResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
+                if (!apiResponse.isSuccessful) return@map emptyList()
+                response = apiResponse.body.string()
+                apiCache?.put(cleanUrl, response)
+            }
+            val parsedResponse = gson.fromJson(response, SearchResult::class.java)
+
+            // Discover results carry no media_type, so it comes from the endpoint
+            parsedResponse.results.map { result ->
+                SearchResultInfo(
+                    id = result.id,
+                    mediaType = mediaType,
+                    backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
+                )
+            }
+        }
+        // Movie and TV popularity aren't on the same scale, so alternate them instead of sorting
+        return interleave(movies, shows)
+    }
+
+    companion object {
+        /** a[0], b[0], a[1], b[1], …, then whatever is left of the longer list. */
+        fun <T> interleave(a: List<T>, b: List<T>): List<T> =
+            (0 until maxOf(a.size, b.size)).flatMap { i -> listOfNotNull(a.getOrNull(i), b.getOrNull(i)) }
+    }
+
     // Data classes for parsing TMDb API response
     data class SearchResult(
         @SerializedName("results") val results: List<Result>
