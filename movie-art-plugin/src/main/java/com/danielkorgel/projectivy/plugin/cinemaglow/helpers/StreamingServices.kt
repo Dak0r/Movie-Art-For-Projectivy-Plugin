@@ -36,9 +36,15 @@ object StreamingServices {
         "de.rtli.tvnow" to "178", // RTL+
         "de.rtli.tvnow.androidtv" to "178",
         "de.prosiebensat1.joyn" to "307", // Joyn
+        "de.prosiebensat1digital.seventv" to "307", // Joyn
         "de.zdf.android.mediathek" to "486", // ZDFmediathek
+        "com.zdf.android.mediathek" to "486", // ZDFmediathek
+        "de.zdf.mediathek" to "486", // ZDFmediathek
         "de.daserste.mediathek" to "487", // ARD Mediathek
+        "de.swr.avp.ard.tv" to "487", // ARD Mediathek
+        "de.ard.mediathek" to "487", // ARD Mediathek
         "de.telekom.magentatv" to "472", // MagentaTV
+        "de.telekom.magentatv.tv" to "472", // MagentaTV
         "de.exaring.waipu" to "497", // Waipu.tv
         "tv.rakuten.android" to "35", // Rakuten TV
 
