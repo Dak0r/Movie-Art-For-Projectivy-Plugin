@@ -107,16 +107,18 @@ class WallpaperProviderService : Service() {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
                     appServiceRotation.focusedApp = event.packageName
+                    try {
+                        appServiceWallpaper(event.packageName)?.let { return it }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                     fallbackWallpaper(event)
                 }
 
-                // Every few minutes (Projectivy's wallpaper update frequency): with "Popular Movies and
-                // Shows", move a still-focused streaming app on to its next title. Otherwise rotate general
-                // fallback wallpaper.
+                // Every few minutes (Projectivy's wallpaper update frequency): move a still-focused
+                // streaming app on to its next title, or rotate fallback wallpaper.
                 is Event.TimeElapsed -> {
-                    val app = appServiceRotation.appToRotateOnTimer(
-                        PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows
-                    )
+                    val app = appServiceRotation.focusedApp
                     try {
                         app?.let { appServiceWallpaper(it) } ?: fallbackWallpaper(event)
                     } catch (e: Exception) {
@@ -280,16 +282,7 @@ class WallpaperProviderService : Service() {
             }
 
             if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
-                // A known streaming app shows what's popular on its own service
-                if (event is Event.CardFocused) {
-                    try {
-                        appServiceWallpaper(event.packageName)?.let { return it }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-
-                // Any other app gets the overall popular titles
+                // Any tile that isn't a movie, show, or supported app gets overall popular titles
                 try {
                     val api = tmdbApi
                     var info: TMDbApi.SearchResultInfo? = null
