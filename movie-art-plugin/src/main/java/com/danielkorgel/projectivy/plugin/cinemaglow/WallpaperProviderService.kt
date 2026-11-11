@@ -111,14 +111,14 @@ class WallpaperProviderService : Service() {
                 }
 
                 // Every few minutes (Projectivy's wallpaper update frequency): with "Popular Movies and
-                // Shows", move a still-focused streaming app on to its next title. Otherwise nothing
-                // changes, since an empty list keeps the current wallpaper.
+                // Shows", move a still-focused streaming app on to its next title. Otherwise rotate general
+                // fallback wallpaper.
                 is Event.TimeElapsed -> {
                     val app = appServiceRotation.appToRotateOnTimer(
                         PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows
                     )
                     try {
-                        app?.let { appServiceWallpaper(it) } ?: emptyList()
+                        app?.let { appServiceWallpaper(it) } ?: fallbackWallpaper(event)
                     } catch (e: Exception) {
                         e.printStackTrace()
                         emptyList()

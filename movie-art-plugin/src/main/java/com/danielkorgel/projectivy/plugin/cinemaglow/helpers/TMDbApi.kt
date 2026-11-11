@@ -42,7 +42,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
 
         val searchResult = gson.fromJson(response, SearchResult::class.java)
-        val bestMatch = searchResult.results.firstOrNull() ?: return null
+        val bestMatch = searchResult?.results?.firstOrNull() ?: return null
 
         return SearchResultInfo(
             id = bestMatch.id,
@@ -74,9 +74,10 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
 
         val imageResult = gson.fromJson(response, ImageResult::class.java)
-        val logo = imageResult.logos.firstOrNull { it.iso == language }
-            ?: imageResult.logos.firstOrNull { it.iso == "en" }
-            ?: imageResult.logos.firstOrNull()
+        val logos = imageResult?.logos ?: return null
+        val logo = logos.firstOrNull { it.iso == language }
+            ?: logos.firstOrNull { it.iso == "en" }
+            ?: logos.firstOrNull()
 
         return logo?.filePath?.let { "https://image.tmdb.org/t/p/original$it" }
     }
@@ -118,13 +119,13 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
         val parsedResponse = gson.fromJson(response, SearchResult::class.java)
 
-        return parsedResponse.results.map { result ->
+        return parsedResponse?.results?.map { result ->
             SearchResultInfo(
                 id = result.id,
                 mediaType = result.mediaType ?: "movie",
                 backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
             )
-        }
+        } ?: emptyList()
     }
 
     /**
@@ -156,13 +157,13 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
             val parsedResponse = gson.fromJson(response, SearchResult::class.java)
 
             // Discover results carry no media_type, so it comes from the endpoint
-            parsedResponse.results.map { result ->
+            parsedResponse?.results?.map { result ->
                 SearchResultInfo(
                     id = result.id,
                     mediaType = mediaType,
                     backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
                 )
-            }
+            } ?: emptyList()
         }
         // Movie and TV popularity aren't on the same scale, so alternate them instead of sorting
         return interleave(movies, shows)
@@ -176,7 +177,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
 
     // Data classes for parsing TMDb API response
     data class SearchResult(
-        @SerializedName("results") val results: List<Result>
+        @SerializedName("results") val results: List<Result>? = null
     )
 
     data class Result(
@@ -190,7 +191,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
     )
 
     data class ImageResult(
-        @SerializedName("logos") val logos: List<Logo>
+        @SerializedName("logos") val logos: List<Logo>? = null
     )
 
     data class Logo(
