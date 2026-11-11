@@ -296,7 +296,7 @@ class WallpaperProviderService : Service() {
                     var maxTries = 5
                     val popularInfo = api?.fetchPopularTitlesInfo(TMDbApi.TimeWindow.DAY)
                     do {
-                        info = popularInfo?.random()
+                        info = popularInfo?.randomOrNull()
                         maxTries--
                     } while ((info == null || info.backdropUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
 
