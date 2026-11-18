@@ -116,11 +116,21 @@ class WallpaperProviderService : Service() {
                 }
 
                 // Every few minutes (Projectivy's wallpaper update frequency): move a still-focused
-                // streaming app on to its next title, or rotate fallback wallpaper.
+                // streaming app on to its next title. For custom/dynamic fallbacks or program cards, do nothing.
                 is Event.TimeElapsed -> {
-                    val app = appServiceRotation.focusedApp
+                    val app = appServiceRotation.focusedApp ?: return emptyList()
                     try {
-                        app?.let { appServiceWallpaper(it) } ?: fallbackWallpaper(event)
+                        val appWallpaper = appServiceWallpaper(app)
+                        if (appWallpaper != null) {
+                            return appWallpaper
+                        }
+
+                        // For unsupported apps, only rotate if fallback background is set to PopularMoviesAndShows
+                        if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+                            fallbackWallpaper(event)
+                        } else {
+                            emptyList()
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                         emptyList()
@@ -233,6 +243,7 @@ class WallpaperProviderService : Service() {
          */
         private fun appServiceWallpaper(packageName: String?): List<Wallpaper>? {
             if (packageName == null) return null
+            println("Package: $packageName")
             val providerIds = StreamingServices.providerIdsFor(packageName) ?: return null
             val region = Locale.getDefault().country.ifEmpty { "US" }
             val titles = tmdbApi?.fetchPopularOnProvidersInfo(providerIds, region)

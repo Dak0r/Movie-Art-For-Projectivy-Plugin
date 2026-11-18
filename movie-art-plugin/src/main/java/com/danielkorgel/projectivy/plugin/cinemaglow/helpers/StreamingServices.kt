@@ -35,61 +35,33 @@ object StreamingServices {
         "de.sky.ticket" to "30",
         "de.rtli.tvnow" to "178", // RTL+
         "de.rtli.tvnow.androidtv" to "178",
-        "de.prosiebensat1.joyn" to "307", // Joyn
-        "de.prosiebensat1digital.seventv" to "307", // Joyn
-        "de.zdf.android.mediathek" to "486", // ZDFmediathek
-        "com.zdf.android.mediathek" to "486", // ZDFmediathek
-        "de.zdf.mediathek" to "486", // ZDFmediathek
-        "de.daserste.mediathek" to "487", // ARD Mediathek
-        "de.swr.avp.ard.tv" to "487", // ARD Mediathek
-        "de.ard.mediathek" to "487", // ARD Mediathek
-        "de.telekom.magentatv" to "472", // MagentaTV
-        "de.telekom.magentatv.tv" to "472", // MagentaTV
-        "de.exaring.waipu" to "497", // Waipu.tv
-        "tv.rakuten.android" to "35", // Rakuten TV
+        "de.prosiebensat1.joyn" to "304|421", // Joyn, Joyn Plus
+        "de.prosiebensat1digital.seventv" to "304|421", // Joyn, Joyn Plus
+        "de.zdf.android.mediathek" to "537", // ZDF
+        "com.zdf.android.mediathek" to "537", // ZDF
+        "de.zdf.mediathek" to "537", // ZDF
+        "de.daserste.mediathek" to "219|1902", // ARD Mediathek, ARD Plus
+        "de.swr.avp.ard.tv" to "219|1902", // ARD Mediathek, ARD Plus
+        "de.ard.mediathek" to "219|1902", // ARD Mediathek, ARD Plus
 
         // United Kingdom (UK)
-        "uk.co.bbc.iplayer" to "338", // BBC iPlayer
+        "uk.co.bbc.iplayer" to "38|329|338|285", // BBC iPlayer / Player
         "uk.co.itv.itvhub.tve" to "41|1771", // ITVX
         "air.itv.mobile.app" to "41|1771",
-        "uk.co.channel4.all4" to "103", // Channel 4
-        "com.channel4.onesvc" to "103",
-        "uk.co.rightster.five" to "333", // My5
-        "com.five.my5" to "333",
-        "com.bskyb.nowtv.uk" to "39", // NOW (UK)
-        "com.nowtv.uk" to "39",
-        "uk.co.uktv.dave" to "363", // U (UKTV Play)
 
         // France (FR)
-        "com.canal.android.canal" to "381", // myCANAL / Canal+
         "fr.tf1.mytf1" to "559", // TF1+
-        "fr.francetv.pluzz" to "560", // France TV
-        "tv.arte.plus7" to "234", // Arte
-        "tv.molotov.app" to "193", // Molotov TV
-        "com.orange.ocsgo" to "564|381", // OCS / Canal+ Go
 
         // Spain (ES)
-        "es.movistar.plus" to "149", // Movistar+
-        "com.telefonica.miservicios" to "149",
         "es.rtve.rtveplay" to "541", // RTVE Play
         "es.rtve.alacarta" to "541",
-        "com.atresplayer" to "296", // Atresplayer
-        "com.telecinco.es" to "558|359", // Mitele
-        "tv.filmin.filmin" to "63", // Filmin
 
         // Italy (IT)
         "it.rai.play" to "222", // RaiPlay
         "it.mediaset.video" to "359", // Mediaset Infinity
-        "it.sky.now" to "39", // NOW (IT)
-        "it.telecomitalia.timvision" to "109", // TIMVISION
 
         // Netherlands (NL) & Nordics (SE, NO, DK)
         "nl.videoland.android" to "71", // Videoland (NL)
-        "nl.npo.mgp" to "361", // NPO Start / Plus (NL)
-        "com.viaplay.android" to "117", // Viaplay
-        "no.nrk.tv" to "463", // NRK TV (NO)
-        "se.svt.android.svtplay" to "464", // SVT Play (SE)
-        "dk.tv2.tv2play" to "465|567", // TV 2 Play (DK/NO)
 
         // Anime, International & Niche
         "com.crunchyroll.crunchyroid" to "283", // Crunchyroll
