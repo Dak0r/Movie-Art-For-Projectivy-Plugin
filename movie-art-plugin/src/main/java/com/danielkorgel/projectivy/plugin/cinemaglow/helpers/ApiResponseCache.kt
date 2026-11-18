@@ -5,8 +5,8 @@ import android.net.Uri
 import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
-import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 
 @Serializable
 data class CacheEntry(
@@ -18,6 +18,7 @@ data class CacheEntry(
 class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
 
     private val cache: MutableMap<String, CacheEntry> = ConcurrentHashMap()
+    private val saveExecutor = Executors.newSingleThreadExecutor()
 
     init {
         loadCacheFromFile()
@@ -25,22 +26,17 @@ class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
 
     /**
      * Puts a value in the cache.
-     * @param validForSeconds How long the entry is valid. If null, it defaults to midnight (0 AM) of the next day.
+     * @param validForSeconds How long the entry is valid in seconds. If null, defaults to 24 hours (86,400 seconds).
      */
     fun put(key: String, value: String, validForSeconds: Int? = null) {
-        val expiresAt = if (validForSeconds != null) {
-            System.currentTimeMillis() + (validForSeconds * 1000L)
+        val durationMs = if (validForSeconds != null) {
+            validForSeconds * 1000L
         } else {
-            val calendar = Calendar.getInstance()
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            calendar.timeInMillis
+            24 * 60 * 60 * 1000L // 24 hours
         }
+        val expiresAt = System.currentTimeMillis() + durationMs
         cache[key] = CacheEntry(key, value, expiresAt)
-        saveCacheToFile()
+        saveCacheToFileAsync()
     }
 
     fun get(key: String): String? {
@@ -56,17 +52,9 @@ class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
     }
 
     fun remove(key: String) {
-        cache.remove(key)
-        saveCacheToFile()
-    }
-
-    fun containsKey(key: String): Boolean {
-        val entry = cache[key] ?: return false
-        if (entry.expiresAt == null || System.currentTimeMillis() > entry.expiresAt) {
-            remove(key)
-            return false
+        if (cache.remove(key) != null) {
+            saveCacheToFileAsync()
         }
-        return true
     }
 
     private fun loadCacheFromFile() {
@@ -93,17 +81,19 @@ class ApiResponseCache(private val context: Context, private val fileUri: Uri) {
         }
     }
 
-    private fun saveCacheToFile() {
-        try {
-            val contentResolver = context.contentResolver
-            val entries = cache.values.toList()
-            val json = Json.encodeToString(entries)
-            val outputStream = contentResolver.openOutputStream(fileUri)
-            outputStream?.use {
-                it.write(json.toByteArray())
+    private fun saveCacheToFileAsync() {
+        saveExecutor.execute {
+            try {
+                val contentResolver = context.contentResolver
+                val entries = cache.values.toList()
+                val json = Json.encodeToString(entries)
+                val outputStream = contentResolver.openOutputStream(fileUri)
+                outputStream?.use {
+                    it.write(json.toByteArray())
+                }
+            } catch (e: Exception) {
+                println("Error saving cache: ${e.message}")
             }
-        } catch (e: Exception) {
-            println("Error saving cache: ${e.message}")
         }
     }
 }
