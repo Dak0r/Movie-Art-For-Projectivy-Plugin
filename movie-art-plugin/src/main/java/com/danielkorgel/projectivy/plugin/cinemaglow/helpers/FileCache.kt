@@ -67,9 +67,15 @@ fun exposeFileToOtherApps(context: Context, cacheFile: File): Uri {
     return fileUri
 }
 
-fun downloadBitmap(imageUrl: String): Bitmap? {
+val sharedOkHttpClient: OkHttpClient by lazy {
+    OkHttpClient.Builder()
+        .connectTimeout(3, TimeUnit.SECONDS)
+        .readTimeout(5, TimeUnit.SECONDS)
+        .build()
+}
+
+fun downloadBitmap(imageUrl: String, client: OkHttpClient = sharedOkHttpClient): Bitmap? {
     return try {
-        val client = OkHttpClient()
         val request = Request.Builder().url(imageUrl).build()
         val response = client.newCall(request).execute()
         if (!response.isSuccessful) return null

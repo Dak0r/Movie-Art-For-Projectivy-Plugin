@@ -2,7 +2,6 @@ package com.danielkorgel.projectivy.plugin.cinemaglow
 
 import android.app.Service
 import android.content.ContentResolver
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.IBinder
@@ -34,17 +33,6 @@ class WallpaperProviderService : Service() {
     var apiCache: ApiResponseCache? = null
     var tmdbApi: TMDbApi? = null
     val appServiceRotation = AppServiceRotation()
-
-
-
-    fun fileUriExists(context: Context, fileUri: Uri): Boolean {
-        return try {
-            context.contentResolver.openInputStream(fileUri)?.close() // Try opening the URI
-            true // If no exception, file exists
-        } catch (_: Exception) {
-            false // If an exception occurs, file does not exist
-        }
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -107,18 +95,30 @@ class WallpaperProviderService : Service() {
                 // When the focused card changes (app icons)
                 is Event.CardFocused -> {
                     appServiceRotation.focusedApp = event.packageName
+                    try {
+                        appServiceWallpaper(event.packageName)?.let { return it }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                     fallbackWallpaper(event)
                 }
 
-                // Every few minutes (Projectivy's wallpaper update frequency): with "Popular Movies and
-                // Shows", move a still-focused streaming app on to its next title. Otherwise nothing
-                // changes, since an empty list keeps the current wallpaper.
+                // Every few minutes (Projectivy's wallpaper update frequency): move a still-focused
+                // streaming app on to its next title. For custom/dynamic fallbacks or program cards, do nothing.
                 is Event.TimeElapsed -> {
-                    val app = appServiceRotation.appToRotateOnTimer(
-                        PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows
-                    )
+                    val app = appServiceRotation.focusedApp ?: return emptyList()
                     try {
-                        app?.let { appServiceWallpaper(it) } ?: emptyList()
+                        val appWallpaper = appServiceWallpaper(app)
+                        if (appWallpaper != null) {
+                            return appWallpaper
+                        }
+
+                        // For unsupported apps, only rotate if fallback background is set to PopularMoviesAndShows
+                        if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
+                            fallbackWallpaper(event)
+                        } else {
+                            emptyList()
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                         emptyList()
@@ -185,17 +185,16 @@ class WallpaperProviderService : Service() {
             val filename = backdropUrl.substringAfterLast("/")
             val file = getCacheFile(that, "processed_v4_$filename")
 
-            if (!fileUriExists(that, Uri.fromFile(file))) {
+            if (!file.exists()) {
                 try {
-                    val logoUrl = tmdbApi?.fetchLogoUrl(info.mediaType, info.id)
-
                     val backdropFuture = CompletableFuture.supplyAsync { downloadBitmap(backdropUrl) }
-                    val logoFuture = logoUrl?.let { url ->
-                        CompletableFuture.supplyAsync { downloadBitmap(url) }
+                    val logoFuture = CompletableFuture.supplyAsync {
+                        val logoUrl = tmdbApi?.fetchLogoUrl(info.mediaType, info.id)
+                        logoUrl?.let { downloadBitmap(it) }
                     }
 
                     val backdropBitmap = backdropFuture.get()
-                    val logoBitmap = logoFuture?.get()
+                    val logoBitmap = logoFuture.get()
 
                     if (backdropBitmap != null) {
                         val processedBitmap = ImageProcessor.processMovieArt(
@@ -213,7 +212,7 @@ class WallpaperProviderService : Service() {
                 }
             }
 
-            if (!fileUriExists(that, Uri.fromFile(file))) return null
+            if (!file.exists()) return null
             val shareableUri = exposeFileToOtherApps(that, file).toString()
             updateLastWallpaperSent(shareableUri)
             return listOf(
@@ -231,6 +230,7 @@ class WallpaperProviderService : Service() {
          */
         private fun appServiceWallpaper(packageName: String?): List<Wallpaper>? {
             if (packageName == null) return null
+            println("Package: $packageName")
             val providerIds = StreamingServices.providerIdsFor(packageName) ?: return null
             val region = Locale.getDefault().country.ifEmpty { "US" }
             val titles = tmdbApi?.fetchPopularOnProvidersInfo(providerIds, region)
@@ -280,23 +280,14 @@ class WallpaperProviderService : Service() {
             }
 
             if (PreferencesManager.fallbackBackground == PreferencesManager.FallbackBackground.PopularMoviesAndShows) {
-                // A known streaming app shows what's popular on its own service
-                if (event is Event.CardFocused) {
-                    try {
-                        appServiceWallpaper(event.packageName)?.let { return it }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-
-                // Any other app gets the overall popular titles
+                // Any tile that isn't a movie, show, or supported app gets overall popular titles
                 try {
                     val api = tmdbApi
                     var info: TMDbApi.SearchResultInfo? = null
                     var maxTries = 5
                     val popularInfo = api?.fetchPopularTitlesInfo(TMDbApi.TimeWindow.DAY)
                     do {
-                        info = popularInfo?.random()
+                        info = popularInfo?.randomOrNull()
                         maxTries--
                     } while ((info == null || info.backdropUrl == PreferencesManager.lastWallpaper) && maxTries > 0)
 
@@ -315,7 +306,7 @@ class WallpaperProviderService : Service() {
                         that,
                         "gradient_${event.lightColor}_${event.darkColor}.json"
                     )
-                    if (!fileUriExists(that, Uri.fromFile(file))) {
+                    if (!file.exists()) {
                         val lottieEditor =
                             LottieEditorRegex(that, getDrawableUri(R.raw.two_color_gradient))
                         lottieEditor

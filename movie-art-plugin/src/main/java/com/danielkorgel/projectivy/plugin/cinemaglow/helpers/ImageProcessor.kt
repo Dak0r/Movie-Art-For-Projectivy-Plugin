@@ -2,7 +2,6 @@ package com.danielkorgel.projectivy.plugin.cinemaglow.helpers
 
 import android.graphics.*
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.get
 import androidx.core.graphics.scale
 
 object ImageProcessor {
@@ -108,24 +107,30 @@ object ImageProcessor {
         return try {
             val width = bitmap.width
             val height = bitmap.height
-            val startY = height - (height / 3)
+            val sampleHeight = height / 3
+            val startY = height - sampleHeight
             val step = 20 // sample every 20 pixels
-            var totalLuminance = 0.0
+
+            val pixels = IntArray(width * sampleHeight)
+            bitmap.getPixels(pixels, 0, width, 0, startY, width, sampleHeight)
+
+            var totalLuminance = 0L
             var count = 0
-            
-            for (x in 0 until width step step) {
-                for (y in startY until height step step) {
-                    val color = bitmap[x, y]
-                    val r = Color.red(color)
-                    val g = Color.green(color)
-                    val b = Color.blue(color)
-                    totalLuminance += (0.299 * r) + (0.587 * g) + (0.114 * b)
+
+            for (y in 0 until sampleHeight step step) {
+                val rowOffset = y * width
+                for (x in 0 until width step step) {
+                    val color = pixels[rowOffset + x]
+                    val r = (color shr 16) and 0xFF
+                    val g = (color shr 8) and 0xFF
+                    val b = color and 0xFF
+                    totalLuminance += (299 * r + 587 * g + 114 * b)
                     count++
                 }
             }
-            
+
             if (count == 0) return true
-            (totalLuminance / count) > 150 // Threshold for "bright"
+            (totalLuminance / count) > 150000 // (150 * 1000)
         } catch (_: Exception) {
             true // Default to bright (stronger shadow) on error
         }

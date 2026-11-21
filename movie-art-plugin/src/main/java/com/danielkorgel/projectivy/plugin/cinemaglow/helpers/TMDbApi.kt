@@ -6,13 +6,14 @@ import okhttp3.Request
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import java.util.Locale
+import java.util.concurrent.CompletableFuture
 
-class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache?) {
+class TMDbApi(
+    private val apiKey: String,
+    private val apiCache: ApiResponseCache?,
+    private val client: OkHttpClient = sharedOkHttpClient,
+) {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-        .build()
     private val gson = Gson()
 
     // Base URL for TMDb API
@@ -27,12 +28,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         val requestUrl = "$baseUrl/search/multi?api_key=$apiKey&page=1&language=$language&query=${java.net.URLEncoder.encode(cleanName, "UTF-8")}"
 
         val cleanUrl = cleanString(requestUrl)
-        var response: String? = null
-        apiCache?.let { cache ->
-            if (cache.containsKey(cleanUrl)) {
-                response = cache.get(cleanUrl)
-            }
-        }
+        var response: String? = apiCache?.get(cleanUrl)
 
         if (response == null) {
             val searchResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
@@ -42,7 +38,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
 
         val searchResult = gson.fromJson(response, SearchResult::class.java)
-        val bestMatch = searchResult.results.firstOrNull() ?: return null
+        val bestMatch = searchResult?.results?.firstOrNull() ?: return null
 
         return SearchResultInfo(
             id = bestMatch.id,
@@ -59,12 +55,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         val requestUrl = "$baseUrl/$mediaType/$id/images?api_key=$apiKey&include_image_language=$language,en,null"
 
         val cleanUrl = cleanString(requestUrl)
-        var response: String? = null
-        apiCache?.let { cache ->
-            if (cache.containsKey(cleanUrl)) {
-                response = cache.get(cleanUrl)
-            }
-        }
+        var response: String? = apiCache?.get(cleanUrl)
 
         if (response == null) {
             val imageResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
@@ -74,9 +65,10 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
 
         val imageResult = gson.fromJson(response, ImageResult::class.java)
-        val logo = imageResult.logos.firstOrNull { it.iso == language }
-            ?: imageResult.logos.firstOrNull { it.iso == "en" }
-            ?: imageResult.logos.firstOrNull()
+        val logos = imageResult?.logos ?: return null
+        val logo = logos.firstOrNull { it.iso == language }
+            ?: logos.firstOrNull { it.iso == "en" }
+            ?: logos.firstOrNull()
 
         return logo?.filePath?.let { "https://image.tmdb.org/t/p/original$it" }
     }
@@ -104,12 +96,8 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         val requestUrl = "$baseUrl/trending/all/$timeWindowParam?api_key=$apiKey&page=1&language=$language"
 
         val cleanUrl = cleanString(requestUrl)
-        var response: String? = null
-        apiCache?.let { cache ->
-            if (cache.containsKey(cleanUrl)) {
-                response = cache.get(cleanUrl)
-            }
-        }
+        var response: String? = apiCache?.get(cleanUrl)
+
         if (response == null) {
             val apiResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
             if (!apiResponse.isSuccessful) return emptyList()
@@ -118,13 +106,13 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
         }
         val parsedResponse = gson.fromJson(response, SearchResult::class.java)
 
-        return parsedResponse.results.map { result ->
+        return parsedResponse?.results?.map { result ->
             SearchResultInfo(
                 id = result.id,
                 mediaType = result.mediaType ?: "movie",
                 backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
             )
-        }
+        } ?: emptyList()
     }
 
     /**
@@ -136,36 +124,48 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
      */
     fun fetchPopularOnProvidersInfo(providerIds: String, region: String): List<SearchResultInfo> {
         val language = Locale.getDefault().language
-        val (movies, shows) = listOf("movie", "tv").map { mediaType ->
-            val requestUrl = "$baseUrl/discover/$mediaType?api_key=$apiKey&page=1&language=$language" +
-                "&sort_by=popularity.desc&watch_region=$region&with_watch_providers=$providerIds"
-
-            val cleanUrl = cleanString(requestUrl)
-            var response: String? = null
-            apiCache?.let { cache ->
-                if (cache.containsKey(cleanUrl)) {
-                    response = cache.get(cleanUrl)
-                }
-            }
-            if (response == null) {
-                val apiResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
-                if (!apiResponse.isSuccessful) return@map emptyList()
-                response = apiResponse.body.string()
-                apiCache?.put(cleanUrl, response)
-            }
-            val parsedResponse = gson.fromJson(response, SearchResult::class.java)
-
-            // Discover results carry no media_type, so it comes from the endpoint
-            parsedResponse.results.map { result ->
-                SearchResultInfo(
-                    id = result.id,
-                    mediaType = mediaType,
-                    backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
-                )
-            }
+        val movieFuture = CompletableFuture.supplyAsync {
+            fetchDiscoverResults("movie", providerIds, region, language)
         }
+        val tvFuture = CompletableFuture.supplyAsync {
+            fetchDiscoverResults("tv", providerIds, region, language)
+        }
+
+        val movies = movieFuture.get()
+        val shows = tvFuture.get()
+
         // Movie and TV popularity aren't on the same scale, so alternate them instead of sorting
         return interleave(movies, shows)
+    }
+
+    private fun fetchDiscoverResults(
+        mediaType: String,
+        providerIds: String,
+        region: String,
+        language: String
+    ): List<SearchResultInfo> {
+        val requestUrl = "$baseUrl/discover/$mediaType?api_key=$apiKey&page=1&language=$language" +
+            "&sort_by=popularity.desc&watch_region=$region&with_watch_providers=$providerIds"
+
+        val cleanUrl = cleanString(requestUrl)
+        var response: String? = apiCache?.get(cleanUrl)
+
+        if (response == null) {
+            val apiResponse = client.newCall(Request.Builder().url(requestUrl).build()).execute()
+            if (!apiResponse.isSuccessful) return emptyList()
+            response = apiResponse.body.string()
+            apiCache?.put(cleanUrl, response)
+        }
+        val parsedResponse = gson.fromJson(response, SearchResult::class.java)
+
+        // Discover results carry no media_type, so it comes from the endpoint
+        return parsedResponse?.results?.map { result ->
+            SearchResultInfo(
+                id = result.id,
+                mediaType = mediaType,
+                backdropUrl = result.backdropPath?.let { "https://image.tmdb.org/t/p/original$it" }
+            )
+        } ?: emptyList()
     }
 
     companion object {
@@ -176,7 +176,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
 
     // Data classes for parsing TMDb API response
     data class SearchResult(
-        @SerializedName("results") val results: List<Result>
+        @SerializedName("results") val results: List<Result>? = null
     )
 
     data class Result(
@@ -190,7 +190,7 @@ class TMDbApi(private val apiKey: String, private val apiCache: ApiResponseCache
     )
 
     data class ImageResult(
-        @SerializedName("logos") val logos: List<Logo>
+        @SerializedName("logos") val logos: List<Logo>? = null
     )
 
     data class Logo(

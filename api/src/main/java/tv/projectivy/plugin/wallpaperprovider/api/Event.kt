@@ -51,7 +51,7 @@ sealed class Event(open val eventType: Int) : Parcelable {
     }
 
     @Parcelize
-    object TimeElapsed: Event(TIME_ELAPSED)
+    data class TimeElapsed(override val eventType: Int = TIME_ELAPSED): Event(eventType)
     @Parcelize
     data class NowPlayingChanged(override val eventType: Int = NOW_PLAYING_CHANGED, val isPlaying: Boolean = true, val title: String?=null, val artist: String?=null, val album: String?=null, val iconUri: String?=null): Event(NOW_PLAYING_CHANGED)
     @Parcelize
