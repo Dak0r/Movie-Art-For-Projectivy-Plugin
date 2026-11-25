@@ -14,13 +14,14 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-fun getCacheFile(context: Context, fileName: String): File {
-    // Get the external cache directory
-    val cacheDir = context.externalCacheDir ?: throw Exception("Can't access external cache dir")
+fun getCacheDir(context: Context): File {
+    return context.externalCacheDir ?: context.cacheDir
+}
 
-    // Create the file in the external cache directory
+fun getCacheFile(context: Context, fileName: String): File {
+    val cacheDir = getCacheDir(context)
     val cacheFile = File(cacheDir, fileName)
-    
+
     // If the file exists, update its last modified timestamp to mark it as "recently used"
     if (cacheFile.exists()) {
         cacheFile.setLastModified(System.currentTimeMillis())
@@ -36,17 +37,19 @@ fun getCacheFile(context: Context, fileName: String): File {
 fun cleanExpiredCache(context: Context, maxAgeDays: Int = 7) {
     thread(start = true, name = "CacheCleanupThread") {
         try {
-            val cacheDir = context.externalCacheDir ?: return@thread
             val threshold = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(maxAgeDays.toLong())
+            val dirsToClean = listOfNotNull(context.externalCacheDir, context.cacheDir).distinct()
 
-            cacheDir.listFiles()?.forEach { file ->
-                // Keep the core API cache file and custom background regardless of age
-                if (file.name == "tmdb_api_cache.json") return@forEach
-                if (file.name == PreferencesManager.customFallbackBackgroundName) return@forEach
+            for (cacheDir in dirsToClean) {
+                cacheDir.listFiles()?.forEach { file ->
+                    // Keep the core API cache file and custom background regardless of age
+                    if (file.name == "tmdb_api_cache.json") return@forEach
+                    if (file.name == PreferencesManager.customFallbackBackgroundName) return@forEach
 
-                if (file.isFile && file.lastModified() < threshold) {
-                    println("FileCache: Deleting unused file from cache: ${file.name}")
-                    file.delete()
+                    if (file.isFile && file.lastModified() < threshold) {
+                        println("FileCache: Deleting unused file from cache: ${file.name}")
+                        file.delete()
+                    }
                 }
             }
         } catch (e: Exception) {
