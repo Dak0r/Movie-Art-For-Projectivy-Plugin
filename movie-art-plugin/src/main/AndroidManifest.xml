@@ -13,6 +13,7 @@
         android:required="true" />
 
     <application
+        android:name=".CinemaglowApp"
         android:allowBackup="true"
         android:label="@string/plugin_name"
         android:supportsRtl="true"

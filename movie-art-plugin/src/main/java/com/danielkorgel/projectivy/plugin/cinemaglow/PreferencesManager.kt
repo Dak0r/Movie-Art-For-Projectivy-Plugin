@@ -28,17 +28,19 @@ object PreferencesManager {
     const val KEY_LAST_CACHE_CLEAN = "last_cache_clean"
 
     fun init(context: Context) {
-        preferences = PreferenceManager.getDefaultSharedPreferences(context)
-        // Migrate legacy setting
-        val legacySetting = get(KEY_APP_BACKGROUND, "")
-        if(legacySetting == FallbackBackground.CustomBackground.name) {
-            set(KEY_FALLBACK_BACKGROUND, FallbackBackground.CustomBackground.name)
-            set(KEY_APP_BACKGROUND, "")
-        }
-        val legacyCustomBg = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
-        if (legacyCustomBg != "") {
-            set(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, legacyCustomBg)
-            set(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+        if (!::preferences.isInitialized) {
+            preferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+            // Migrate legacy setting
+            val legacySetting = get(KEY_APP_BACKGROUND, "")
+            if (legacySetting == FallbackBackground.CustomBackground.name) {
+                set(KEY_FALLBACK_BACKGROUND, FallbackBackground.CustomBackground.name)
+                set(KEY_APP_BACKGROUND, "")
+            }
+            val legacyCustomBg = get(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+            if (legacyCustomBg != "") {
+                set(KEY_CUSTOM_FALLBACK_BACKGROUND_NAME, legacyCustomBg)
+                set(KEY_CUSTOM_APP_BACKGROUND_NAME, "")
+            }
         }
     }
 
