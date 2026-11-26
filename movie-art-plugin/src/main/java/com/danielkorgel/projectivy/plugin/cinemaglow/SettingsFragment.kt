@@ -11,6 +11,7 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 import androidx.core.net.toUri
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
+import kotlin.concurrent.thread
 
 class SettingsFragment : GuidedStepSupportFragment() {
 
@@ -156,8 +157,18 @@ class SettingsFragment : GuidedStepSupportFragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
-            data?.data?.let { uri ->
-                val context = requireContext()
+            val uri = data?.data ?: return
+            val context = requireContext().applicationContext
+            val activity = activity ?: return
+
+            @Suppress("DEPRECATION")
+            val progressDialog = android.app.ProgressDialog(requireContext()).apply {
+                setMessage(getString(R.string.fallback_bg_setting_progress))
+                setCancelable(false)
+                show()
+            }
+
+            thread(start = true, name = "CopyBackgroundThread") {
                 val file = BackgroundPickerHelper.copyBackgroundFromUri(context, uri)
                 if (file != null && file.exists()) {
                     // Delete old file if it exists to avoid cluttering cache
@@ -167,14 +178,29 @@ class SettingsFragment : GuidedStepSupportFragment() {
                             oldFile.delete()
                         }
                     }
-                    
+
                     PreferencesManager.customFallbackBackgroundName = file.name
                     PreferencesManager.fallbackBackground = PreferencesManager.FallbackBackground.CustomBackground
-                    updateToggleAction()
-                    Toast.makeText(context, R.string.fallback_bg_set_success, Toast.LENGTH_LONG).show()
-                    println("Custom background set from gallery: ${file.absolutePath}")
+
+                    activity.runOnUiThread {
+                        if (progressDialog.isShowing) {
+                            try {
+                                progressDialog.dismiss()
+                            } catch (_: Exception) {}
+                        }
+                        updateToggleAction()
+                        Toast.makeText(context, R.string.fallback_bg_set_success, Toast.LENGTH_LONG).show()
+                        println("Custom background set from gallery: ${file.absolutePath}")
+                    }
                 } else {
-                    Toast.makeText(context, "Failed to copy file", Toast.LENGTH_SHORT).show()
+                    activity.runOnUiThread {
+                        if (progressDialog.isShowing) {
+                            try {
+                                progressDialog.dismiss()
+                            } catch (_: Exception) {}
+                        }
+                        Toast.makeText(context, R.string.failed_to_copy_file, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
