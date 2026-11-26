@@ -2,7 +2,6 @@ package com.danielkorgel.projectivy.plugin.cinemaglow
 
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -93,20 +92,35 @@ class SettingsFragment : GuidedStepSupportFragment() {
 
             ACTION_ID_GET_PROJECTIVY -> {
                 val packageName = "com.spocky.projengmenu"
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW,
-                        "market://details?id=$packageName".toUri()))
-                } catch (_: ActivityNotFoundException) {
-                    startActivity(Intent(Intent.ACTION_VIEW,
-                        "https://play.google.com/store/apps/details?id=$packageName".toUri()))
+                val marketIntent = Intent(Intent.ACTION_VIEW, "market://details?id=$packageName".toUri())
+                val webIntent = Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$packageName".toUri())
+                val launchedMarket = safeStartActivity(marketIntent)
+                if (!launchedMarket) {
+                    safeStartActivity(webIntent, R.string.no_app_found_to_open_link)
                 }
                 println("Projectivy PlayStore page opened!")
             }
 
             ACTION_ID_ABOUT -> {
-                startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/Dak0r/Movie-Art-For-Projectivy-Plugin/".toUri()))
+                val webIntent = Intent(Intent.ACTION_VIEW, "https://github.com/Dak0r/Movie-Art-For-Projectivy-Plugin/".toUri())
+                safeStartActivity(webIntent, R.string.no_app_found_to_open_link)
                 println("Website Opened!")
             }
+        }
+    }
+
+    private fun safeStartActivity(intent: Intent, fallbackToastMsgRes: Int? = null): Boolean {
+        return try {
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            fallbackToastMsgRes?.let { msgRes ->
+                context?.let { ctx ->
+                    Toast.makeText(ctx, msgRes, Toast.LENGTH_SHORT).show()
+                }
+            }
+            false
         }
     }
 
@@ -118,8 +132,11 @@ class SettingsFragment : GuidedStepSupportFragment() {
         }
         try {
             startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
-        } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "No gallery app found", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            context?.let {
+                Toast.makeText(it, R.string.no_gallery_app_found, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
