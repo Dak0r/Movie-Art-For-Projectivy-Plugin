@@ -18,4 +18,8 @@
     <string name="setting_fallback_bg_pick_gallery_title">Set custom Fallback Background</string>
     <string name="setting_fallback_bg_pick_gallery_description">Select an image or video from your device.\nRequires a Gallery or File Explorer app.</string>
     <string name="fallback_bg_set_success">Custom background set successfully!\nNote: Videos might load slow on first start.</string>
+    <string name="no_gallery_app_found">No gallery or file manager app found</string>
+    <string name="no_app_found_to_open_link">No web browser or app store found to open link</string>
+    <string name="fallback_bg_setting_progress">Setting custom background, please wait…</string>
+    <string name="failed_to_copy_file">Failed to copy background file</string>
 </resources>

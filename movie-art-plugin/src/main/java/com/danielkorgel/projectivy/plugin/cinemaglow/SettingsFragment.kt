@@ -2,7 +2,6 @@ package com.danielkorgel.projectivy.plugin.cinemaglow
 
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -12,6 +11,7 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 import androidx.core.net.toUri
 import com.danielkorgel.projectivy.plugin.cinemaglow.helpers.BackgroundPickerHelper
+import kotlin.concurrent.thread
 
 class SettingsFragment : GuidedStepSupportFragment() {
 
@@ -93,20 +93,35 @@ class SettingsFragment : GuidedStepSupportFragment() {
 
             ACTION_ID_GET_PROJECTIVY -> {
                 val packageName = "com.spocky.projengmenu"
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW,
-                        "market://details?id=$packageName".toUri()))
-                } catch (_: ActivityNotFoundException) {
-                    startActivity(Intent(Intent.ACTION_VIEW,
-                        "https://play.google.com/store/apps/details?id=$packageName".toUri()))
+                val marketIntent = Intent(Intent.ACTION_VIEW, "market://details?id=$packageName".toUri())
+                val webIntent = Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$packageName".toUri())
+                val launchedMarket = safeStartActivity(marketIntent)
+                if (!launchedMarket) {
+                    safeStartActivity(webIntent, R.string.no_app_found_to_open_link)
                 }
                 println("Projectivy PlayStore page opened!")
             }
 
             ACTION_ID_ABOUT -> {
-                startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/Dak0r/Movie-Art-For-Projectivy-Plugin/".toUri()))
+                val webIntent = Intent(Intent.ACTION_VIEW, "https://github.com/Dak0r/Movie-Art-For-Projectivy-Plugin/".toUri())
+                safeStartActivity(webIntent, R.string.no_app_found_to_open_link)
                 println("Website Opened!")
             }
+        }
+    }
+
+    private fun safeStartActivity(intent: Intent, fallbackToastMsgRes: Int? = null): Boolean {
+        return try {
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            fallbackToastMsgRes?.let { msgRes ->
+                context?.let { ctx ->
+                    Toast.makeText(ctx, msgRes, Toast.LENGTH_SHORT).show()
+                }
+            }
+            false
         }
     }
 
@@ -118,8 +133,11 @@ class SettingsFragment : GuidedStepSupportFragment() {
         }
         try {
             startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
-        } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "No gallery app found", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            context?.let {
+                Toast.makeText(it, R.string.no_gallery_app_found, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -139,8 +157,18 @@ class SettingsFragment : GuidedStepSupportFragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
-            data?.data?.let { uri ->
-                val context = requireContext()
+            val uri = data?.data ?: return
+            val context = requireContext().applicationContext
+            val activity = activity ?: return
+
+            @Suppress("DEPRECATION")
+            val progressDialog = android.app.ProgressDialog(requireContext()).apply {
+                setMessage(getString(R.string.fallback_bg_setting_progress))
+                setCancelable(false)
+                show()
+            }
+
+            thread(start = true, name = "CopyBackgroundThread") {
                 val file = BackgroundPickerHelper.copyBackgroundFromUri(context, uri)
                 if (file != null && file.exists()) {
                     // Delete old file if it exists to avoid cluttering cache
@@ -150,14 +178,29 @@ class SettingsFragment : GuidedStepSupportFragment() {
                             oldFile.delete()
                         }
                     }
-                    
+
                     PreferencesManager.customFallbackBackgroundName = file.name
                     PreferencesManager.fallbackBackground = PreferencesManager.FallbackBackground.CustomBackground
-                    updateToggleAction()
-                    Toast.makeText(context, R.string.fallback_bg_set_success, Toast.LENGTH_LONG).show()
-                    println("Custom background set from gallery: ${file.absolutePath}")
+
+                    activity.runOnUiThread {
+                        if (progressDialog.isShowing) {
+                            try {
+                                progressDialog.dismiss()
+                            } catch (_: Exception) {}
+                        }
+                        updateToggleAction()
+                        Toast.makeText(context, R.string.fallback_bg_set_success, Toast.LENGTH_LONG).show()
+                        println("Custom background set from gallery: ${file.absolutePath}")
+                    }
                 } else {
-                    Toast.makeText(context, "Failed to copy file", Toast.LENGTH_SHORT).show()
+                    activity.runOnUiThread {
+                        if (progressDialog.isShowing) {
+                            try {
+                                progressDialog.dismiss()
+                            } catch (_: Exception) {}
+                        }
+                        Toast.makeText(context, R.string.failed_to_copy_file, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
